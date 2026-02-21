@@ -127,3 +127,9 @@ npm-debug.*
 *.orig.*
 web-build/
 cache/
+
+# Expo CNG - native folders are auto-generated, do not commit
+ios/
+android/
+apps/app/ios/
+apps/app/android/
