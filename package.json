@@ -2,7 +2,9 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start-app": "cd /Users/yusufkhan/git/noor-maps/apps/app && npx expo start"
+  },
   "private": true,
   "devDependencies": {
     "@babel/core": "^7.14.5",
