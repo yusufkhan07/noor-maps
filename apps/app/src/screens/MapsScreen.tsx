@@ -2,43 +2,36 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Linking, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 import { MosqueBottomSheet, Mosque, PrayerTimes } from './MosqueBottomSheet';
 
-const MOSQUES: Mosque[] = [
-  {
-    id: '1',
-    title: 'Mosque 1',
-    description: 'Description for mosque 1',
-    coordinate: {
-      latitude: 37.7749,
-      longitude: -122.4194,
-    },
-  },
-  {
-    id: '2',
-    title: 'Mosque 2',
-    description: 'Description for mosque 2',
-    coordinate: {
-      latitude: 37.7849,
-      longitude: -122.4094,
-    },
-  },
-];
+// In Expo Go / dev builds, hostUri is the dev server address (e.g. "192.168.1.5:8081").
+// Stripping the port gives us the machine's LAN IP, which works on both simulator and real device.
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
+const API_BASE = `http://${devHost}:3000`;
 
 const RADIUS_METERS = 1000;
 
 const INITIAL_REGION = {
-  latitude: MOSQUES[0].coordinate.latitude,
-  longitude: MOSQUES[0].coordinate.longitude,
-  latitudeDelta: 0.018,
-  longitudeDelta: 0.018,
+  latitude: 51.5072,
+  longitude: -0.1276,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
 };
 
 export const MapsScreen = () => {
+  const [mosques, setMosques] = useState<Mosque[]>([]);
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [isPrayerTimesLoading, setIsPrayerTimesLoading] = useState(false);
   const mapRef = useRef<MapView>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/mosques`)
+      .then(r => r.json())
+      .then(setMosques)
+      .catch(() => setMosques([]));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -117,7 +110,7 @@ export const MapsScreen = () => {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        {MOSQUES.map((mosque) => (
+        {mosques.map((mosque) => (
           <React.Fragment key={mosque.id}>
             <Marker
               coordinate={mosque.coordinate}
