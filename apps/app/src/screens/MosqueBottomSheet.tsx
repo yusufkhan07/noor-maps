@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AddTimingsModal } from './AddTimingsModal';
 
 export type Mosque = {
   id: string;
@@ -38,7 +39,6 @@ type Props = {
   isLoading: boolean;
   onClose: () => void;
   onGetDirections: () => void;
-  onAddTimings?: () => void;
   onReportMistake?: () => void;
 };
 
@@ -63,11 +63,11 @@ export const MosqueBottomSheet = ({
   isLoading,
   onClose,
   onGetDirections,
-  onAddTimings,
   onReportMistake,
 }: Props) => {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isFavourite, setIsFavourite] = useState(false);
+  const [showAddTimings, setShowAddTimings] = useState(false);
 
   useEffect(() => {
     if (mosque) {
@@ -112,6 +112,7 @@ export const MosqueBottomSheet = ({
   ).current;
 
   return (
+    <>
     <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
       {/* Drag handle */}
       <View style={styles.handleArea} {...panResponder.panHandlers}>
@@ -146,7 +147,7 @@ export const MosqueBottomSheet = ({
                 <Text style={styles.actionChipLabel}>Directions</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionChip} onPress={onAddTimings}>
+              <TouchableOpacity style={styles.actionChip} onPress={() => setShowAddTimings(true)}>
                 <Text style={styles.actionChipIcon}>✎</Text>
                 <Text style={styles.actionChipLabel}>Add / Update Timings</Text>
               </TouchableOpacity>
@@ -199,6 +200,16 @@ export const MosqueBottomSheet = ({
         )}
       </ScrollView>
     </Animated.View>
+
+    {mosque && (
+      <AddTimingsModal
+        visible={showAddTimings}
+        mosqueName={mosque.title}
+        onClose={() => setShowAddTimings(false)}
+        onSubmit={() => setShowAddTimings(false)}
+      />
+    )}
+    </>
   );
 };
 
