@@ -3,7 +3,7 @@ import { MosqueTimingsRepository, type TimingsPatch } from '../repositories/Mosq
 
 const mosqueTimingsRepository = new MosqueTimingsRepository();
 
-export function patchMosqueTimings(req: Request, res: Response): void {
+export async function patchMosqueTimings(req: Request, res: Response): Promise<void> {
   const id = req.params['id'] as string;
   const { fixed, scheduleEntry } = req.body as TimingsPatch;
 
@@ -12,7 +12,7 @@ export function patchMosqueTimings(req: Request, res: Response): void {
     return;
   }
 
-  const updated = mosqueTimingsRepository.update(id, { fixed, scheduleEntry });
+  const updated = await mosqueTimingsRepository.update(id, { fixed, scheduleEntry });
 
   if (!updated) {
     res.status(404).json({ error: `No timings found for mosque ${id}` });

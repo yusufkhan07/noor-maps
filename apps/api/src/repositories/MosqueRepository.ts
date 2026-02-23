@@ -1,19 +1,44 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { supabase } from '../lib/supabase.js';
 import type { Mosque } from '../types/Mosque.js';
 
+type MosqueRow = {
+  id: string;
+  title: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+};
+
+function rowToMosque(row: MosqueRow): Mosque {
+  return {
+    id: row.id,
+    title: row.title,
+    address: row.address,
+    coordinate: { latitude: row.latitude, longitude: row.longitude },
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
+    website: row.website ?? undefined,
+  };
+}
+
 export class MosqueRepository {
-  private getAll(): Mosque[] {
-    return JSON.parse(
-      readFileSync(join(__dirname, '../data/mosques.json'), 'utf-8')
-    );
+  async findAll(): Promise<Mosque[]> {
+    const { data, error } = await supabase.from('mosques').select('*');
+    if (error) throw error;
+    return (data as MosqueRow[]).map(rowToMosque);
   }
 
-  findAll(): Mosque[] {
-    return this.getAll();
-  }
-
-  findById(id: string): Mosque | undefined {
-    return this.getAll().find((m) => m.id === id);
+  async findById(id: string): Promise<Mosque | undefined> {
+    const { data, error } = await supabase
+      .from('mosques')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error?.code === 'PGRST116') return undefined; // row not found
+    if (error) throw error;
+    return rowToMosque(data as MosqueRow);
   }
 }

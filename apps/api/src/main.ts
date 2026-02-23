@@ -1,3 +1,8 @@
+import { config } from 'dotenv';
+import { join } from 'node:path';
+// __dirname at runtime is dist/apps/api/src/ — four levels up reaches apps/api/
+config({ path: join(__dirname, '../../../../.env') });
+
 import express from 'express';
 import { mosquesRouter } from './routes/mosques';
 

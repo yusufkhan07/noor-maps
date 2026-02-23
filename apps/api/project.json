@@ -16,12 +16,7 @@
         "main": "apps/api/src/main.ts",
         "tsConfig": "apps/api/tsconfig.app.json",
         "assets": [
-          "apps/api/src/assets",
-          {
-            "input": "apps/api/src/data",
-            "output": "apps/api/src/data",
-            "glob": "*.json"
-          }
+          "apps/api/src/assets"
         ],
         "esbuildOptions": {
           "sourcemap": true,

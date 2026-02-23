@@ -133,3 +133,7 @@ ios/
 android/
 apps/app/ios/
 apps/app/android/
+# Environment files
+.env
+.env.production
+.env.local

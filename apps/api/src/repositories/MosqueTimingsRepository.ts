@@ -1,8 +1,49 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { supabase } from '../lib/supabase.js';
 import type { IqamaFixed, MosqueTimings, ScheduleEntry } from '../types/Mosque.js';
 
-const DATA_PATH = join(__dirname, '../data/timings.json');
+type MosqueTimingsRow = {
+  mosque_id: string;
+  fajr: string;
+  dhuhr: string;
+  asr: string;
+  maghrib: string;
+  isha: string;
+  updated_at: string;
+  schedule: ScheduleEntry[];
+};
+
+function rowToMosqueTimings(row: MosqueTimingsRow): MosqueTimings {
+  return {
+    mosqueId: row.mosque_id,
+    fixed: {
+      fajr: row.fajr,
+      dhuhr: row.dhuhr,
+      asr: row.asr,
+      maghrib: row.maghrib,
+      isha: row.isha,
+    },
+    updatedAt: row.updated_at,
+    schedule: row.schedule,
+  };
+}
+
+function buildFixedPayload(fixed: Partial<IqamaFixed>, now: string): Partial<MosqueTimingsRow> {
+  const payload: Partial<MosqueTimingsRow> = { updated_at: now };
+  if (fixed.fajr !== undefined) payload.fajr = fixed.fajr;
+  if (fixed.dhuhr !== undefined) payload.dhuhr = fixed.dhuhr;
+  if (fixed.asr !== undefined) payload.asr = fixed.asr;
+  if (fixed.maghrib !== undefined) payload.maghrib = fixed.maghrib;
+  if (fixed.isha !== undefined) payload.isha = fixed.isha;
+  return payload;
+}
+
+function upsertScheduleEntry(schedule: ScheduleEntry[], newEntry: ScheduleEntry): ScheduleEntry[] {
+  const existingIndex = schedule.findIndex((s) => s.effectiveFrom === newEntry.effectiveFrom);
+  const updated = existingIndex === -1
+    ? [...schedule, newEntry]
+    : schedule.map((s, i) => (i === existingIndex ? newEntry : s));
+  return updated.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+}
 
 export type TimingsPatch = {
   fixed?: Partial<IqamaFixed>;
@@ -13,52 +54,48 @@ export type TimingsPatch = {
 };
 
 export class MosqueTimingsRepository {
-  private read(): MosqueTimings[] {
-    return JSON.parse(readFileSync(DATA_PATH, 'utf-8'));
+  async findByMosqueId(mosqueId: string): Promise<MosqueTimings | undefined> {
+    const { data, error } = await supabase
+      .from('mosque_timings')
+      .select('*')
+      .eq('mosque_id', mosqueId)
+      .single();
+    if (error?.code === 'PGRST116') return undefined; // row not found
+    if (error) throw error;
+    return rowToMosqueTimings(data as MosqueTimingsRow);
   }
 
-  private write(data: MosqueTimings[]): void {
-    writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
-  }
-
-  findByMosqueId(mosqueId: string): MosqueTimings | undefined {
-    return this.read().find((t) => t.mosqueId === mosqueId);
-  }
-
-  update(mosqueId: string, patch: TimingsPatch): MosqueTimings | undefined {
-    const all = this.read();
-    const index = all.findIndex((t) => t.mosqueId === mosqueId);
-
-    if (index === -1) return undefined;
-
-    const entry = all[index];
+  async update(mosqueId: string, patch: TimingsPatch): Promise<MosqueTimings | undefined> {
     const now = new Date().toISOString();
-
-    if (patch.fixed) {
-      entry.fixed = { ...entry.fixed, ...patch.fixed };
-      entry.updatedAt = now;
-    }
+    const updatePayload: Partial<MosqueTimingsRow> = patch.fixed
+      ? buildFixedPayload(patch.fixed, now)
+      : {};
 
     if (patch.scheduleEntry) {
+      const { data: current, error: fetchError } = await supabase
+        .from('mosque_timings')
+        .select('schedule')
+        .eq('mosque_id', mosqueId)
+        .single();
+      if (fetchError?.code === 'PGRST116') return undefined;
+      if (fetchError) throw fetchError;
+
       const { effectiveFrom, fixed } = patch.scheduleEntry;
       const newEntry: ScheduleEntry = { effectiveFrom, updatedAt: now, fixed };
-
-      // Upsert: replace existing entry with the same effectiveFrom, or append
-      const existing = entry.schedule.findIndex(
-        (s) => s.effectiveFrom === effectiveFrom
+      updatePayload.schedule = upsertScheduleEntry(
+        (current as MosqueTimingsRow).schedule ?? [],
+        newEntry
       );
-      if (existing !== -1) {
-        entry.schedule[existing] = newEntry;
-      } else {
-        entry.schedule.push(newEntry);
-      }
-
-      // Keep sorted ascending by effectiveFrom
-      entry.schedule.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
     }
 
-    all[index] = entry;
-    this.write(all);
-    return entry;
+    const { data, error } = await supabase
+      .from('mosque_timings')
+      .update(updatePayload)
+      .eq('mosque_id', mosqueId)
+      .select()
+      .single();
+    if (error?.code === 'PGRST116') return undefined;
+    if (error) throw error;
+    return rowToMosqueTimings(data as MosqueTimingsRow);
   }
 }
