@@ -149,7 +149,7 @@ export const MosqueBottomSheet = ({
 
               <TouchableOpacity style={styles.actionChip} onPress={() => setShowAddTimings(true)}>
                 <Text style={styles.actionChipIcon}>✎</Text>
-                <Text style={styles.actionChipLabel}>Add / Update Timings</Text>
+                <Text style={styles.actionChipLabel}>Edit Timings</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={[styles.actionChip, styles.actionChipLast]} onPress={onReportMistake}>

@@ -170,6 +170,17 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
     setActivePrayer(null);
   };
 
+  const handleUnset = () => {
+    if (!activePrayer) return;
+    setForm(f => {
+      const next = { ...f };
+      delete next[activePrayer];
+      return next;
+    });
+    setStep('select');
+    setActivePrayer(null);
+  };
+
   const updateEntry = (patch: Partial<PrayerEntry>) => {
     if (!activePrayer) return;
     setForm(f => ({
@@ -337,6 +348,12 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
                   </TouchableOpacity>
                 </View>
               </View>
+            )}
+
+            {activePrayer && form[activePrayer] && (
+              <TouchableOpacity style={styles.unsetBtn} onPress={handleUnset}>
+                <Text style={styles.unsetBtnText}>Remove</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -558,5 +575,18 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     minWidth: 90,
     textAlign: 'center',
+  },
+  unsetBtn: {
+    marginTop: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e53935',
+  },
+  unsetBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#e53935',
   },
 });
