@@ -17,14 +17,12 @@ import { MosqueHeader } from './MosqueHeader/MosqueHeader';
 import { MosqueInfo } from './MosqueInfo/MosqueInfo';
 import { useSaveTimings } from './mutations/useSaveTimings';
 import { PrayerTimesTable } from './PrayerTimesTable/PrayerTimesTable';
+import { usePrayerData } from './queries/usePrayerData';
 import { styles } from './styles';
-import { IqamahTimes, Mosque, PrayerTimes } from './types';
+import { Mosque } from './types';
 
 type Props = {
   mosque: Mosque | null;
-  prayerTimes: PrayerTimes | null;
-  iqamahTimes?: IqamahTimes | null;
-  isLoading: boolean;
   onClose: () => void;
 };
 
@@ -32,13 +30,10 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SHEET_HEIGHT = SCREEN_HEIGHT;
 const DISMISS_THRESHOLD = 80;
 
-export const MosqueBottomSheet = ({
-  isLoading,
-  mosque,
-  prayerTimes,
-  iqamahTimes,
-  onClose,
-}: Props) => {
+export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
+  const { prayerData, isLoading } = usePrayerData(mosque);
+  const prayerTimes = prayerData?.prayerTimes ?? null;
+  const iqamahTimes = prayerData?.iqamahTimes ?? null;
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isFavourite, setIsFavourite] = useState(false);
   const [showAddTimings, setShowAddTimings] = useState(false);

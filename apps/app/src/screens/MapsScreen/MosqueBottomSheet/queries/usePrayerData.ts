@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchAladhanTimings, fetchMosqueTimings } from '../../../api';
-import type { Mosque, PrayerTimes, IqamahTimes } from '../../MosqueBottomSheet/MosqueBottomSheet';
+import { fetchAladhanTimings, fetchMosqueTimings } from '../../../../api';
+import type { Mosque, PrayerTimes, IqamahTimes } from '../types';
 
 function to12h(time: string): string {
   const [hourStr, minStr] = time.split(':');

@@ -5,7 +5,6 @@ import * as Location from 'expo-location';
 import { MosqueBottomSheet } from './MosqueBottomSheet/MosqueBottomSheet';
 import { SearchBar } from './SearchBar/SearchBar';
 import { useMosques } from './queries/useMosques';
-import { usePrayerData } from './queries/usePrayerData';
 import { styles } from './styles';
 import { Mosque } from './MosqueBottomSheet/types';
 
@@ -32,8 +31,6 @@ export const MapsScreen = () => {
   };
 
   const mosques = useMosques();
-  const { prayerData, isLoading: isPrayerTimesLoading } =
-    usePrayerData(selectedMosque);
 
   useEffect(() => {
     (async () => {
@@ -89,9 +86,6 @@ export const MapsScreen = () => {
 
       <MosqueBottomSheet
         mosque={selectedMosque}
-        prayerTimes={prayerData?.prayerTimes ?? null}
-        iqamahTimes={prayerData?.iqamahTimes ?? null}
-        isLoading={isPrayerTimesLoading}
         onClose={() => {
           setSelectedMosque(null);
         }}
