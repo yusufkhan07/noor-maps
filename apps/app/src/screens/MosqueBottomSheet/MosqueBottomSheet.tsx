@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AddTimingsModal } from '../AddTimingsModal/AddTimingsModal';
+import { AddTimingsModal, TimingsForm } from '../AddTimingsModal/AddTimingsModal';
 import { styles } from './styles';
 
 export type Mosque = {
@@ -38,8 +38,10 @@ type Props = {
   prayerTimes: PrayerTimes | null;
   iqamahTimes?: IqamahTimes | null;
   isLoading: boolean;
+  apiBase: string;
   onClose: () => void;
   onGetDirections: () => void;
+  onTimingsUpdated: () => void;
   onReportMistake?: () => void;
 };
 
@@ -72,13 +74,27 @@ const ContactRow = ({ icon, label, placeholder }: ContactRowProps) => (
   </View>
 );
 
+// Converts a PrayerEntry from the form into an IqamaFixed-compatible string.
+// Fixed mode → "HH:MM" (24h). Relative mode → "+N".
+function formEntryToApiValue(entry: TimingsForm[keyof TimingsForm]): string | undefined {
+  if (!entry) return undefined;
+  if (entry.mode === 'relative') {
+    return `+${entry.offsetMinutes}`;
+  }
+  const h = entry.time.getHours();
+  const m = entry.time.getMinutes();
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 export const MosqueBottomSheet = ({
   mosque,
   prayerTimes,
   iqamahTimes,
   isLoading,
+  apiBase,
   onClose,
   onGetDirections,
+  onTimingsUpdated,
   onReportMistake,
 }: Props) => {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -126,6 +142,34 @@ export const MosqueBottomSheet = ({
       },
     })
   ).current;
+
+  const handleSubmitTimings = async (form: TimingsForm): Promise<void> => {
+    if (!mosque) return;
+
+    const fixed: Record<string, string> = {};
+    const prayers: [keyof TimingsForm, string][] = [
+      ['Fajr', 'fajr'],
+      ['Dhuhr', 'dhuhr'],
+      ['Asr', 'asr'],
+      ['Maghrib', 'maghrib'],
+      ['Isha', 'isha'],
+    ];
+    for (const [formKey, apiKey] of prayers) {
+      const value = formEntryToApiValue(form[formKey]);
+      if (value !== undefined) fixed[apiKey] = value;
+    }
+
+    const res = await fetch(`${apiBase}/mosques/${mosque.id}/timings`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fixed }),
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+    setShowAddTimings(false);
+    onTimingsUpdated();
+  };
 
   return (
     <>
@@ -223,7 +267,7 @@ export const MosqueBottomSheet = ({
         visible={showAddTimings}
         mosqueName={mosque.title}
         onClose={() => setShowAddTimings(false)}
-        onSubmit={() => setShowAddTimings(false)}
+        onSubmit={handleSubmitTimings}
       />
     )}
     </>

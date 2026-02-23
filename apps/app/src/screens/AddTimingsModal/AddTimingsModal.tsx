@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   SafeAreaView,
   Text,
@@ -23,7 +24,7 @@ type PrayerEntry = {
   offsetDirection: '+' | '-';
 };
 
-type TimingsForm = Partial<Record<keyof PrayerTimes, PrayerEntry>>;
+export type TimingsForm = Partial<Record<keyof PrayerTimes, PrayerEntry>>;
 
 const PRAYERS: [keyof PrayerTimes, string][] = [
   ['Fajr', 'Fajr'],
@@ -52,7 +53,7 @@ type Props = {
   visible: boolean;
   mosqueName: string;
   onClose: () => void;
-  onSubmit: (form: TimingsForm) => void;
+  onSubmit: (form: TimingsForm) => Promise<void>;
 };
 
 type Step = 'select' | 'edit';
@@ -61,6 +62,8 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
   const [form, setForm] = useState<TimingsForm>({});
   const [step, setStep] = useState<Step>('select');
   const [activePrayer, setActivePrayer] = useState<keyof PrayerTimes | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSelectPrayer = (key: keyof PrayerTimes) => {
     if (!form[key]) {
@@ -79,14 +82,23 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
     setForm({});
     setStep('select');
     setActivePrayer(null);
+    setError(null);
     onClose();
   };
 
-  const handleSubmit = () => {
-    onSubmit(form);
-    setForm({});
-    setStep('select');
-    setActivePrayer(null);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit(form);
+      setForm({});
+      setStep('select');
+      setActivePrayer(null);
+    } catch {
+      setError('Failed to save timings. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUnset = () => {
@@ -123,7 +135,7 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
               <Text style={styles.navButtonText}>‹ Back</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={handleClose} style={styles.navButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.navButton} disabled={isSubmitting}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           )}
@@ -135,18 +147,29 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
           <TouchableOpacity
             onPress={step === 'edit' ? handleBack : handleSubmit}
             style={styles.navButton}
-            disabled={step === 'select' && filledCount === 0}
+            disabled={step === 'select' && (filledCount === 0 || isSubmitting)}
           >
-            <Text style={[
-              styles.submitText,
-              step === 'select' && filledCount === 0 && styles.submitTextDisabled,
-            ]}>
-              {step === 'edit' ? 'Done' : 'Submit'}
-            </Text>
+            {step === 'select' && isSubmitting ? (
+              <ActivityIndicator size="small" color="#1a6b3c" />
+            ) : (
+              <Text style={[
+                styles.submitText,
+                step === 'select' && filledCount === 0 && styles.submitTextDisabled,
+              ]}>
+                {step === 'edit' ? 'Done' : 'Submit'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
         <Text style={styles.subtitle}>{mosqueName}</Text>
+
+        {/* ── Error banner ── */}
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
+          </View>
+        )}
 
         {/* ── Step 1: Prayer selector ── */}
         {step === 'select' && (

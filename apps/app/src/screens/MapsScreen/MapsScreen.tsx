@@ -131,6 +131,38 @@ export const MapsScreen = () => {
     setIqamahTimes(null);
   }, []);
 
+  // Re-fetches only the iqamah timings after an edit, using the last known adhan times.
+  const handleTimingsUpdated = useCallback(async () => {
+    if (!selectedMosque) return;
+    try {
+      const timingsRes = await fetch(`${API_BASE}/mosques/${selectedMosque.id}/timings`);
+      if (!timingsRes.ok) return;
+      const timingsJson = await timingsRes.json();
+
+      // We need raw 24h adhan times to resolve relative offsets.
+      // Re-fetch from Aladhan rather than storing raw times in state.
+      const timestamp = Math.floor(Date.now() / 1000);
+      const { latitude, longitude } = selectedMosque.coordinate;
+      const aladhanRes = await fetch(
+        `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=2`
+      );
+      const aladhanJson = await aladhanRes.json();
+      const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
+      const adhan = { Fajr, Dhuhr, Asr, Maghrib, Isha };
+
+      const f = timingsJson.fixed;
+      setIqamahTimes({
+        Fajr: resolveIqamahTime(f.fajr, adhan.Fajr),
+        Dhuhr: resolveIqamahTime(f.dhuhr, adhan.Dhuhr),
+        Asr: resolveIqamahTime(f.asr, adhan.Asr),
+        Maghrib: resolveIqamahTime(f.maghrib, adhan.Maghrib),
+        Isha: resolveIqamahTime(f.isha, adhan.Isha),
+      });
+    } catch {
+      // Silently fail — stale times remain visible
+    }
+  }, [selectedMosque]);
+
   const handleGetDirections = useCallback(() => {
     if (!selectedMosque) return;
     const { latitude, longitude } = selectedMosque.coordinate;
@@ -187,8 +219,10 @@ export const MapsScreen = () => {
         prayerTimes={prayerTimes}
         iqamahTimes={iqamahTimes}
         isLoading={isPrayerTimesLoading}
+        apiBase={API_BASE}
         onClose={handleSheetClose}
         onGetDirections={handleGetDirections}
+        onTimingsUpdated={handleTimingsUpdated}
       />
     </View>
   );

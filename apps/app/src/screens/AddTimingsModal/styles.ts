@@ -197,4 +197,17 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#e53935',
   },
+
+  errorBanner: {
+    backgroundColor: '#fdecea',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#f5c6c6',
+  },
+  errorBannerText: {
+    fontSize: 13,
+    color: '#c62828',
+    textAlign: 'center',
+  },
 });
