@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Animated,
   Dimensions,
+  Linking,
   PanResponder,
   ScrollView,
   Text,
@@ -15,27 +17,7 @@ import {
 } from './AddTimingsModal/AddTimingsModal';
 import { useSaveTimings } from './mutations/useSaveTimings';
 import { styles } from './styles';
-
-export type Mosque = {
-  id: string;
-  title: string;
-  description: string;
-  address?: string;
-  coordinate: { latitude: number; longitude: number };
-  email?: string;
-  website?: string;
-  phone?: string;
-};
-
-export type PrayerTimes = {
-  Fajr: string;
-  Dhuhr: string;
-  Asr: string;
-  Maghrib: string;
-  Isha: string;
-};
-
-export type IqamahTimes = Partial<PrayerTimes>;
+import { IqamahTimes, Mosque, PrayerTimes } from './types';
 
 type Props = {
   mosque: Mosque | null;
@@ -43,9 +25,6 @@ type Props = {
   iqamahTimes?: IqamahTimes | null;
   isLoading: boolean;
   onClose: () => void;
-  onGetDirections: () => void;
-  onTimingsUpdated: () => void;
-  onReportMistake?: () => void;
 };
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -62,44 +41,12 @@ const PRAYER_LABELS: [keyof PrayerTimes, string][] = [
   ['Isha', 'Isha'],
 ];
 
-type ContactRowProps = {
-  icon: string;
-  label?: string;
-  placeholder: string;
-};
-
-const ContactRow = ({ icon, label, placeholder }: ContactRowProps) => (
-  <View style={styles.contactRow}>
-    <Text style={styles.contactIcon}>{icon}</Text>
-    <Text style={[styles.contactLabel, !label && styles.missingValue]}>
-      {label || placeholder}
-    </Text>
-  </View>
-);
-
-// Converts a PrayerEntry from the form into an IqamaFixed-compatible string.
-// Fixed mode → "HH:MM" (24h). Relative mode → "+N".
-function formEntryToApiValue(
-  entry: TimingsForm[keyof TimingsForm],
-): string | undefined {
-  if (!entry) return undefined;
-  if (entry.mode === 'relative') {
-    return `+${entry.offsetMinutes}`;
-  }
-  const h = entry.time.getHours();
-  const m = entry.time.getMinutes();
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
 export const MosqueBottomSheet = ({
+  isLoading,
   mosque,
   prayerTimes,
   iqamahTimes,
-  isLoading,
   onClose,
-  onGetDirections,
-  onTimingsUpdated,
-  onReportMistake,
 }: Props) => {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isFavourite, setIsFavourite] = useState(false);
@@ -147,9 +94,34 @@ export const MosqueBottomSheet = ({
     }),
   ).current;
 
+  const handleGetDirections = useCallback(() => {
+    if (!mosque) return;
+    const { latitude, longitude } = mosque.coordinate;
+
+    const appleMapsUrl = `maps://?daddr=${latitude},${longitude}&dirflg=d`;
+    const googleMapsNativeUrl = `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`;
+    const googleMapsFallbackUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ['Cancel', 'Apple Maps', 'Google Maps'],
+        cancelButtonIndex: 0,
+      },
+      async (buttonIndex) => {
+        if (buttonIndex === 1) {
+          Linking.openURL(appleMapsUrl);
+        } else if (buttonIndex === 2) {
+          const canOpenGoogle = await Linking.canOpenURL(googleMapsNativeUrl);
+          Linking.openURL(
+            canOpenGoogle ? googleMapsNativeUrl : googleMapsFallbackUrl,
+          );
+        }
+      },
+    );
+  }, [mosque]);
+
   const { mutateAsync: saveTimings } = useSaveTimings(() => {
     setShowAddTimings(false);
-    onTimingsUpdated();
   });
 
   const handleSubmitTimings = async (form: TimingsForm): Promise<void> => {
@@ -163,6 +135,19 @@ export const MosqueBottomSheet = ({
       ['Maghrib', 'maghrib'],
       ['Isha', 'isha'],
     ];
+
+    // Converts a PrayerEntry from the form into an IqamaFixed-compatible string.
+    // Fixed mode → "HH:MM" (24h). Relative mode → "+N".
+    const formEntryToApiValue = (entry: TimingsForm[keyof TimingsForm]) => {
+      if (!entry) return undefined;
+      if (entry.mode === 'relative') {
+        return `+${entry.offsetMinutes}`;
+      }
+      const h = entry.time.getHours();
+      const m = entry.time.getMinutes();
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
     for (const [formKey, apiKey] of prayers) {
       const value = formEntryToApiValue(form[formKey]);
       if (value !== undefined) fixed[apiKey] = value;
@@ -212,7 +197,7 @@ export const MosqueBottomSheet = ({
               >
                 <TouchableOpacity
                   style={styles.actionChip}
-                  onPress={onGetDirections}
+                  onPress={handleGetDirections}
                 >
                   <Text style={styles.actionChipIcon}>↗</Text>
                   <Text style={styles.actionChipLabel}>Directions</Text>
@@ -228,7 +213,7 @@ export const MosqueBottomSheet = ({
 
                 <TouchableOpacity
                   style={[styles.actionChip, styles.actionChipLast]}
-                  onPress={onReportMistake}
+                  onPress={() => {}}
                 >
                   <Text style={styles.actionChipIcon}>⚑</Text>
                   <Text style={styles.actionChipLabel}>Report a Mistake</Text>
@@ -324,3 +309,20 @@ export const MosqueBottomSheet = ({
     </>
   );
 };
+
+const ContactRow = ({
+  icon,
+  label,
+  placeholder,
+}: {
+  icon: string;
+  label?: string;
+  placeholder: string;
+}) => (
+  <View style={styles.contactRow}>
+    <Text style={styles.contactIcon}>{icon}</Text>
+    <Text style={[styles.contactLabel, !label && styles.missingValue]}>
+      {label || placeholder}
+    </Text>
+  </View>
+);

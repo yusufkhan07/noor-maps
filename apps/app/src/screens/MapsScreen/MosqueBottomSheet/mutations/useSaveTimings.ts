@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { patchMosqueTimings } from '../../../../api';
 
 type SaveTimingsArgs = {
@@ -7,9 +7,13 @@ type SaveTimingsArgs = {
 };
 
 export function useSaveTimings(onSuccess: () => void) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ mosqueId, fixed }: SaveTimingsArgs) =>
       patchMosqueTimings(mosqueId, fixed),
-    onSuccess,
+    onSuccess: (_data, { mosqueId }) => {
+      queryClient.invalidateQueries({ queryKey: ['prayerData', mosqueId] });
+      onSuccess();
+    },
   });
 }
