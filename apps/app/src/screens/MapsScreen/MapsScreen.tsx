@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Linking, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Linking, Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
-import { MosqueBottomSheet, Mosque, PrayerTimes, IqamahTimes } from './MosqueBottomSheet';
+import { MosqueBottomSheet, Mosque, PrayerTimes, IqamahTimes } from '../MosqueBottomSheet/MosqueBottomSheet';
+import { styles } from './styles';
 
 // In Expo Go / dev builds, hostUri is the dev server address (e.g. "192.168.1.5:8081").
 // Stripping the port gives us the machine's LAN IP, which works on both simulator and real device.
@@ -192,15 +193,3 @@ export const MapsScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  marker: {
-    fontSize: 28,
-  },
-});
