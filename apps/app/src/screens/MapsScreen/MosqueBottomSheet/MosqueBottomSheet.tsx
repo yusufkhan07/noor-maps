@@ -1,21 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
-  ActivityIndicator,
   Animated,
   Dimensions,
   Linking,
   PanResponder,
   ScrollView,
-  Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import {
   AddTimingsModal,
   TimingsForm,
 } from './AddTimingsModal/AddTimingsModal';
+import { ActionBar } from './ActionBar/ActionBar';
+import { MosqueHeader } from './MosqueHeader/MosqueHeader';
+import { MosqueInfo } from './MosqueInfo/MosqueInfo';
 import { useSaveTimings } from './mutations/useSaveTimings';
+import { PrayerTimesTable } from './PrayerTimesTable/PrayerTimesTable';
 import { styles } from './styles';
 import { IqamahTimes, Mosque, PrayerTimes } from './types';
 
@@ -28,18 +29,8 @@ type Props = {
 };
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-// Used only for the initial off-screen position and dismiss animation.
-// The sheet itself sizes to its content via maxHeight.
 const SHEET_HEIGHT = SCREEN_HEIGHT;
 const DISMISS_THRESHOLD = 80;
-
-const PRAYER_LABELS: [keyof PrayerTimes, string][] = [
-  ['Fajr', 'Fajr'],
-  ['Dhuhr', 'Dhuhr'],
-  ['Asr', 'Asr'],
-  ['Maghrib', 'Maghrib'],
-  ['Isha', 'Isha'],
-];
 
 export const MosqueBottomSheet = ({
   isLoading,
@@ -136,8 +127,6 @@ export const MosqueBottomSheet = ({
       ['Isha', 'isha'],
     ];
 
-    // Converts a PrayerEntry from the form into an IqamaFixed-compatible string.
-    // Fixed mode → "HH:MM" (24h). Relative mode → "+N".
     const formEntryToApiValue = (entry: TimingsForm[keyof TimingsForm]) => {
       if (!entry) return undefined;
       if (entry.mode === 'relative') {
@@ -159,7 +148,6 @@ export const MosqueBottomSheet = ({
   return (
     <>
       <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        {/* Drag handle */}
         <View style={styles.handleArea} {...panResponder.panHandlers}>
           <View style={styles.handle} />
         </View>
@@ -171,128 +159,28 @@ export const MosqueBottomSheet = ({
         >
           {mosque && (
             <>
-              {/* Name + favourite */}
-              <View style={styles.nameRow}>
-                <Text style={styles.mosqueName}>{mosque.title}</Text>
-                <TouchableOpacity
-                  onPress={() => setIsFavourite((f) => !f)}
-                  style={styles.favButton}
-                >
-                  <Text
-                    style={[
-                      styles.favIcon,
-                      isFavourite && styles.favIconActive,
-                    ]}
-                  >
-                    {isFavourite ? '♥' : '♡'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <MosqueHeader
+                title={mosque.title}
+                isFavourite={isFavourite}
+                onToggleFavourite={() => setIsFavourite((f) => !f)}
+              />
 
-              {/* Action chips — Google Maps style */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.actionRow}
-              >
-                <TouchableOpacity
-                  style={styles.actionChip}
-                  onPress={handleGetDirections}
-                >
-                  <Text style={styles.actionChipIcon}>↗</Text>
-                  <Text style={styles.actionChipLabel}>Directions</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.actionChip}
-                  onPress={() => setShowAddTimings(true)}
-                >
-                  <Text style={styles.actionChipIcon}>✎</Text>
-                  <Text style={styles.actionChipLabel}>Edit Timings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionChip, styles.actionChipLast]}
-                  onPress={() => {}}
-                >
-                  <Text style={styles.actionChipIcon}>⚑</Text>
-                  <Text style={styles.actionChipLabel}>Report a Mistake</Text>
-                </TouchableOpacity>
-              </ScrollView>
+              <ActionBar
+                onGetDirections={handleGetDirections}
+                onEditTimings={() => setShowAddTimings(true)}
+              />
 
               <View style={styles.divider} />
 
-              {/* Prayer times table */}
-              <View style={styles.prayerTimesContainer}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.colHeader, styles.colPrayer]}>
-                    Prayer
-                  </Text>
-                  <Text style={[styles.colHeader, styles.colTime]}>Adhan</Text>
-                  <Text style={[styles.colHeader, styles.colTime]}>Iqamah</Text>
-                </View>
-
-                {isLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="#1a6b3c"
-                    style={styles.loader}
-                  />
-                ) : prayerTimes ? (
-                  PRAYER_LABELS.map(([key, label]) => {
-                    const iqamah = iqamahTimes?.[key];
-                    return (
-                      <View key={key} style={styles.prayerRow}>
-                        <Text style={[styles.prayerLabel, styles.colPrayer]}>
-                          {label}
-                        </Text>
-                        <Text style={[styles.prayerTime, styles.colTime]}>
-                          {prayerTimes[key]}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.prayerTime,
-                            styles.colTime,
-                            !iqamah && styles.missingValue,
-                          ]}
-                        >
-                          {iqamah ?? '—'}
-                        </Text>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text style={styles.errorText}>
-                    Could not load prayer times.
-                  </Text>
-                )}
-              </View>
+              <PrayerTimesTable
+                prayerTimes={prayerTimes}
+                iqamahTimes={iqamahTimes}
+                isLoading={isLoading}
+              />
 
               <View style={styles.divider} />
 
-              {/* Contact info */}
-              <View style={styles.contactSection}>
-                <ContactRow
-                  icon="📍"
-                  label={mosque.address}
-                  placeholder="Not available"
-                />
-                <ContactRow
-                  icon="✉"
-                  label={mosque.email}
-                  placeholder="Not available"
-                />
-                <ContactRow
-                  icon="🌐"
-                  label={mosque.website}
-                  placeholder="Not available"
-                />
-                <ContactRow
-                  icon="📞"
-                  label={mosque.phone}
-                  placeholder="Not available"
-                />
-              </View>
+              <MosqueInfo mosque={mosque} />
             </>
           )}
         </ScrollView>
@@ -309,20 +197,3 @@ export const MosqueBottomSheet = ({
     </>
   );
 };
-
-const ContactRow = ({
-  icon,
-  label,
-  placeholder,
-}: {
-  icon: string;
-  label?: string;
-  placeholder: string;
-}) => (
-  <View style={styles.contactRow}>
-    <Text style={styles.contactIcon}>{icon}</Text>
-    <Text style={[styles.contactLabel, !label && styles.missingValue]}>
-      {label || placeholder}
-    </Text>
-  </View>
-);
