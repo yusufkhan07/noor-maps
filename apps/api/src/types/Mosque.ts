@@ -16,8 +16,15 @@ export type IqamaFixed = {
   isha: string;
 };
 
+export type ScheduleEntry = {
+  effectiveFrom: string; // "YYYY-MM-DD" — active until the next entry's date supersedes it
+  updatedAt: string;     // ISO timestamp set by the server when this entry was saved
+  fixed: IqamaFixed;
+};
+
 export type MosqueTimings = {
   mosqueId: string;
   fixed: IqamaFixed;
-  // schedule will be added here later for date/month-based timings
+  updatedAt: string;       // ISO timestamp of the last direct edit to fixed
+  schedule: ScheduleEntry[]; // sorted ascending by effectiveFrom
 };
