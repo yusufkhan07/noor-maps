@@ -1,4 +1,3 @@
-import * as Location from 'expo-location';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,6 +12,7 @@ import { styles } from './styles';
 
 type Props = {
   onSelectResult: (latitude: number, longitude: number) => void;
+  onClear: () => void;
 };
 
 type Result = {
@@ -22,28 +22,33 @@ type Result = {
   secondary: string;
 };
 
+type NominatimResult = {
+  lat: string;
+  lon: string;
+  name: string;
+  display_name: string;
+};
+
 const buildResults = async (query: string): Promise<Result[]> => {
-  const locations = await Location.geocodeAsync(query);
-  const results = await Promise.all(
-    locations.map(async ({ latitude, longitude }) => {
-      const [address] = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      const primary =
-        address?.name ?? address?.street ?? address?.city ?? query;
-      const secondary = [address?.city, address?.region, address?.country]
-        .filter(Boolean)
-        .join(', ');
-      return { latitude, longitude, primary, secondary };
-    }),
-  );
-  return results;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`;
+  const response = await fetch(url, {
+    headers: { 'Accept-Language': 'en', 'User-Agent': 'NoorMapsApp/1.0' },
+  });
+  const data: NominatimResult[] = await response.json();
+  return data.map((item) => {
+    const parts = item.display_name.split(', ');
+    return {
+      latitude: parseFloat(item.lat),
+      longitude: parseFloat(item.lon),
+      primary: item.name || parts[0],
+      secondary: parts.slice(1).join(', '),
+    };
+  });
 };
 
 const Separator = () => <View style={styles.separator} />;
 
-export const SearchBar = ({ onSelectResult }: Props) => {
+export const SearchBar = ({ onSelectResult, onClear }: Props) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -79,6 +84,7 @@ export const SearchBar = ({ onSelectResult }: Props) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setQuery('');
     setResults([]);
+    onClear();
     inputRef.current?.focus();
   };
 

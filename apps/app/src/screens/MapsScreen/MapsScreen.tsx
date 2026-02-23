@@ -20,9 +20,11 @@ const INITIAL_REGION = {
 
 export const MapsScreen = () => {
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
+  const [searchPin, setSearchPin] = useState<{ latitude: number; longitude: number } | null>(null);
   const mapRef = useRef<MapView>(null);
 
   const handleSelectResult = (latitude: number, longitude: number) => {
+    setSearchPin({ latitude, longitude });
     mapRef.current?.animateToRegion(
       { latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 },
       1000,
@@ -54,7 +56,7 @@ export const MapsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <SearchBar onSelectResult={handleSelectResult} />
+      <SearchBar onSelectResult={handleSelectResult} onClear={() => setSearchPin(null)} />
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -62,6 +64,9 @@ export const MapsScreen = () => {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
+        {searchPin && (
+          <Marker coordinate={searchPin} pinColor="red" />
+        )}
         {mosques.map((mosque) => (
           <React.Fragment key={mosque.id}>
             <Marker
