@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { PrayerTimes } from '../MosqueBottomSheet/MosqueBottomSheet';
+import { PrayerTimes } from '../../MosqueBottomSheet/MosqueBottomSheet';
 import { DrumRoll } from './DrumRoll';
 import { styles } from './styles';
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);   // 0–59
+const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0–59
 const PERIODS = ['AM', 'PM'];
 
 type TimingMode = 'fixed' | 'relative';
@@ -58,16 +58,23 @@ type Props = {
 
 type Step = 'select' | 'edit';
 
-export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Props) => {
+export const AddTimingsModal = ({
+  visible,
+  mosqueName,
+  onClose,
+  onSubmit,
+}: Props) => {
   const [form, setForm] = useState<TimingsForm>({});
   const [step, setStep] = useState<Step>('select');
-  const [activePrayer, setActivePrayer] = useState<keyof PrayerTimes | null>(null);
+  const [activePrayer, setActivePrayer] = useState<keyof PrayerTimes | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSelectPrayer = (key: keyof PrayerTimes) => {
     if (!form[key]) {
-      setForm(f => ({ ...f, [key]: defaultEntry() }));
+      setForm((f) => ({ ...f, [key]: defaultEntry() }));
     }
     setActivePrayer(key);
     setStep('edit');
@@ -103,7 +110,7 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
 
   const handleUnset = () => {
     if (!activePrayer) return;
-    setForm(f => {
+    setForm((f) => {
       const next = { ...f };
       delete next[activePrayer];
       return next;
@@ -114,20 +121,26 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
 
   const updateEntry = (patch: Partial<PrayerEntry>) => {
     if (!activePrayer) return;
-    setForm(f => ({
+    setForm((f) => ({
       ...f,
       [activePrayer]: { ...(f[activePrayer] ?? defaultEntry()), ...patch },
     }));
   };
 
-  const activeEntry = activePrayer ? (form[activePrayer] ?? defaultEntry()) : null;
-  const activePrayerLabel = PRAYERS.find(([k]) => k === activePrayer)?.[1] ?? '';
+  const activeEntry = activePrayer
+    ? (form[activePrayer] ?? defaultEntry())
+    : null;
+  const activePrayerLabel =
+    PRAYERS.find(([k]) => k === activePrayer)?.[1] ?? '';
   const filledCount = Object.keys(form).length;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
       <SafeAreaView style={styles.container}>
-
         {/* ── Header ── */}
         <View style={styles.header}>
           {step === 'edit' ? (
@@ -135,7 +148,11 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
               <Text style={styles.navButtonText}>‹ Back</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={handleClose} style={styles.navButton} disabled={isSubmitting}>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.navButton}
+              disabled={isSubmitting}
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           )}
@@ -152,10 +169,14 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
             {step === 'select' && isSubmitting ? (
               <ActivityIndicator size="small" color="#1a6b3c" />
             ) : (
-              <Text style={[
-                styles.submitText,
-                step === 'select' && filledCount === 0 && styles.submitTextDisabled,
-              ]}>
+              <Text
+                style={[
+                  styles.submitText,
+                  step === 'select' &&
+                    filledCount === 0 &&
+                    styles.submitTextDisabled,
+                ]}
+              >
                 {step === 'edit' ? 'Done' : 'Submit'}
               </Text>
             )}
@@ -208,22 +229,37 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
         {/* ── Step 2: Time editor for the selected prayer ── */}
         {step === 'edit' && activeEntry && (
           <View style={styles.editor}>
-
             {/* Fixed / Relative toggle */}
             <View style={styles.modeToggle}>
               <TouchableOpacity
-                style={[styles.modeTab, activeEntry.mode === 'fixed' && styles.modeTabActive]}
+                style={[
+                  styles.modeTab,
+                  activeEntry.mode === 'fixed' && styles.modeTabActive,
+                ]}
                 onPress={() => updateEntry({ mode: 'fixed' })}
               >
-                <Text style={[styles.modeTabText, activeEntry.mode === 'fixed' && styles.modeTabTextActive]}>
+                <Text
+                  style={[
+                    styles.modeTabText,
+                    activeEntry.mode === 'fixed' && styles.modeTabTextActive,
+                  ]}
+                >
                   Fixed time
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modeTab, activeEntry.mode === 'relative' && styles.modeTabActive]}
+                style={[
+                  styles.modeTab,
+                  activeEntry.mode === 'relative' && styles.modeTabActive,
+                ]}
                 onPress={() => updateEntry({ mode: 'relative' })}
               >
-                <Text style={[styles.modeTabText, activeEntry.mode === 'relative' && styles.modeTabTextActive]}>
+                <Text
+                  style={[
+                    styles.modeTabText,
+                    activeEntry.mode === 'relative' && styles.modeTabTextActive,
+                  ]}
+                >
                   Relative
                 </Text>
               </TouchableOpacity>
@@ -233,7 +269,7 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
               /* Pure-JS drum-roll time picker */
               (() => {
                 const h = activeEntry.time.getHours();
-                const hourIndex = (h % 12) === 0 ? 11 : (h % 12) - 1; // 0-based index into HOURS (1–12)
+                const hourIndex = h % 12 === 0 ? 11 : (h % 12) - 1; // 0-based index into HOURS (1–12)
                 const minuteIndex = activeEntry.time.getMinutes();
                 const periodIndex = h < 12 ? 0 : 1;
 
@@ -259,10 +295,22 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
 
                 return (
                   <View style={styles.drumRow}>
-                    <DrumRoll items={HOURS} selected={hourIndex} onChange={setHour} />
+                    <DrumRoll
+                      items={HOURS}
+                      selected={hourIndex}
+                      onChange={setHour}
+                    />
                     <Text style={styles.drumColon}>:</Text>
-                    <DrumRoll items={MINUTES} selected={minuteIndex} onChange={setMinute} />
-                    <DrumRoll items={PERIODS} selected={periodIndex} onChange={setPeriod} />
+                    <DrumRoll
+                      items={MINUTES}
+                      selected={minuteIndex}
+                      onChange={setMinute}
+                    />
+                    <DrumRoll
+                      items={PERIODS}
+                      selected={periodIndex}
+                      onChange={setPeriod}
+                    />
                   </View>
                 );
               })()
@@ -276,14 +324,30 @@ export const AddTimingsModal = ({ visible, mosqueName, onClose, onSubmit }: Prop
                 <View style={styles.stepper}>
                   <TouchableOpacity
                     style={styles.stepperBtn}
-                    onPress={() => updateEntry({ offsetMinutes: Math.max(1, activeEntry.offsetMinutes - 5) })}
+                    onPress={() =>
+                      updateEntry({
+                        offsetMinutes: Math.max(
+                          1,
+                          activeEntry.offsetMinutes - 5,
+                        ),
+                      })
+                    }
                   >
                     <Text style={styles.stepperBtnText}>−</Text>
                   </TouchableOpacity>
-                  <Text style={styles.stepperValue}>{activeEntry.offsetMinutes} min</Text>
+                  <Text style={styles.stepperValue}>
+                    {activeEntry.offsetMinutes} min
+                  </Text>
                   <TouchableOpacity
                     style={styles.stepperBtn}
-                    onPress={() => updateEntry({ offsetMinutes: Math.min(120, activeEntry.offsetMinutes + 5) })}
+                    onPress={() =>
+                      updateEntry({
+                        offsetMinutes: Math.min(
+                          120,
+                          activeEntry.offsetMinutes + 5,
+                        ),
+                      })
+                    }
                   >
                     <Text style={styles.stepperBtnText}>+</Text>
                   </TouchableOpacity>
