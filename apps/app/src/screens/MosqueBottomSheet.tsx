@@ -16,6 +16,7 @@ export type Mosque = {
   id: string;
   title: string;
   description: string;
+  address?: string;
   coordinate: { latitude: number; longitude: number };
   email?: string;
   website?: string;
@@ -192,9 +193,10 @@ export const MosqueBottomSheet = ({
 
             {/* Contact info */}
             <View style={styles.contactSection}>
-              <ContactRow icon="✉" label={mosque.email} placeholder="Email not listed" />
-              <ContactRow icon="🌐" label={mosque.website} placeholder="Website not listed" />
-              <ContactRow icon="📞" label={mosque.phone} placeholder="Phone not listed" />
+              <ContactRow icon="📍" label={mosque.address} placeholder="Not available" />
+              <ContactRow icon="✉" label={mosque.email} placeholder="Not available" />
+              <ContactRow icon="🌐" label={mosque.website} placeholder="Not available" />
+              <ContactRow icon="📞" label={mosque.phone} placeholder="Not available" />
             </View>
           </>
         )}
@@ -223,7 +225,7 @@ const ContactRow = ({ icon, label, placeholder }: ContactRowProps) => (
   <View style={styles.contactRow}>
     <Text style={styles.contactIcon}>{icon}</Text>
     <Text style={[styles.contactLabel, !label && styles.missingValue]}>
-      {label ?? placeholder}
+      {label || placeholder}
     </Text>
   </View>
 );
