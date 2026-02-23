@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MosqueBottomSheet } from './MosqueBottomSheet/MosqueBottomSheet';
+import { SearchBar } from './SearchBar/SearchBar';
 import { useMosques } from './queries/useMosques';
 import { usePrayerData } from './queries/usePrayerData';
 import { styles } from './styles';
@@ -20,6 +21,13 @@ const INITIAL_REGION = {
 export const MapsScreen = () => {
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
   const mapRef = useRef<MapView>(null);
+
+  const handleSelectResult = (latitude: number, longitude: number) => {
+    mapRef.current?.animateToRegion(
+      { latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 },
+      1000,
+    );
+  };
 
   const mosques = useMosques();
   const { prayerData, isLoading: isPrayerTimesLoading } =
@@ -46,6 +54,7 @@ export const MapsScreen = () => {
 
   return (
     <View style={styles.container}>
+      <SearchBar onSelectResult={handleSelectResult} />
       <MapView
         ref={mapRef}
         style={styles.map}
