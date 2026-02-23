@@ -19,6 +19,23 @@ const INITIAL_REGION = {
   longitudeDelta: 0.08,
 };
 
+// Resolves an iqamah time value against the adhan time.
+// "+N" means N minutes after adhan → returns absolute "HH:MM".
+// "HH:MM" is returned as-is. Anything else (empty, undefined) returns undefined.
+function resolveIqamahTime(value: string | undefined, adhan: string): string | undefined {
+  if (!value) return undefined;
+  if (value.startsWith('+')) {
+    const offset = Number.parseInt(value.slice(1), 10);
+    if (Number.isNaN(offset)) return undefined;
+    const [hourStr, minStr] = adhan.split(':');
+    const total = Number.parseInt(hourStr, 10) * 60 + Number.parseInt(minStr, 10) + offset;
+    const h = Math.floor(total / 60) % 24;
+    const m = total % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  return value;
+}
+
 export const MapsScreen = () => {
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
@@ -70,17 +87,18 @@ export const MapsScreen = () => {
 
       const aladhanJson = await aladhanRes.json();
       const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
-      setPrayerTimes({ Fajr, Dhuhr, Asr, Maghrib, Isha });
+      const adhan = { Fajr, Dhuhr, Asr, Maghrib, Isha };
+      setPrayerTimes(adhan);
 
       if (timingsRes.ok) {
         const timingsJson = await timingsRes.json();
         const f = timingsJson.fixed;
         setIqamahTimes({
-          Fajr: f.fajr || undefined,
-          Dhuhr: f.dhuhr || undefined,
-          Asr: f.asr || undefined,
-          Maghrib: f.maghrib || undefined,
-          Isha: f.isha || undefined,
+          Fajr: resolveIqamahTime(f.fajr, adhan.Fajr),
+          Dhuhr: resolveIqamahTime(f.dhuhr, adhan.Dhuhr),
+          Asr: resolveIqamahTime(f.asr, adhan.Asr),
+          Maghrib: resolveIqamahTime(f.maghrib, adhan.Maghrib),
+          Isha: resolveIqamahTime(f.isha, adhan.Isha),
         });
       }
     } catch {
