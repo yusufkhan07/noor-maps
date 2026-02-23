@@ -3,7 +3,7 @@ import { ActionSheetIOS, Linking, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
-import { MosqueBottomSheet, Mosque, PrayerTimes } from './MosqueBottomSheet';
+import { MosqueBottomSheet, Mosque, PrayerTimes, IqamahTimes } from './MosqueBottomSheet';
 
 // In Expo Go / dev builds, hostUri is the dev server address (e.g. "192.168.1.5:8081").
 // Stripping the port gives us the machine's LAN IP, which works on both simulator and real device.
@@ -23,6 +23,7 @@ export const MapsScreen = () => {
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [iqamahTimes, setIqamahTimes] = useState<IqamahTimes | null>(null);
   const [isPrayerTimesLoading, setIsPrayerTimesLoading] = useState(false);
   const mapRef = useRef<MapView>(null);
 
@@ -55,16 +56,33 @@ export const MapsScreen = () => {
   const handleMarkerPress = useCallback(async (mosque: Mosque) => {
     setSelectedMosque(mosque);
     setPrayerTimes(null);
+    setIqamahTimes(null);
     setIsPrayerTimesLoading(true);
 
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       const { latitude, longitude } = mosque.coordinate;
-      const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=2`;
-      const response = await fetch(url);
-      const json = await response.json();
-      const { Fajr, Dhuhr, Asr, Maghrib, Isha } = json.data.timings;
+
+      const [aladhanRes, timingsRes] = await Promise.all([
+        fetch(`https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=2`),
+        fetch(`${API_BASE}/mosques/${mosque.id}/timings`),
+      ]);
+
+      const aladhanJson = await aladhanRes.json();
+      const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
       setPrayerTimes({ Fajr, Dhuhr, Asr, Maghrib, Isha });
+
+      if (timingsRes.ok) {
+        const timingsJson = await timingsRes.json();
+        const f = timingsJson.fixed;
+        setIqamahTimes({
+          Fajr: f.fajr || undefined,
+          Dhuhr: f.dhuhr || undefined,
+          Asr: f.asr || undefined,
+          Maghrib: f.maghrib || undefined,
+          Isha: f.isha || undefined,
+        });
+      }
     } catch {
       setPrayerTimes(null);
     } finally {
@@ -75,6 +93,7 @@ export const MapsScreen = () => {
   const handleSheetClose = useCallback(() => {
     setSelectedMosque(null);
     setPrayerTimes(null);
+    setIqamahTimes(null);
   }, []);
 
   const handleGetDirections = useCallback(() => {
@@ -131,6 +150,7 @@ export const MapsScreen = () => {
       <MosqueBottomSheet
         mosque={selectedMosque}
         prayerTimes={prayerTimes}
+        iqamahTimes={iqamahTimes}
         isLoading={isPrayerTimesLoading}
         onClose={handleSheetClose}
         onGetDirections={handleGetDirections}
