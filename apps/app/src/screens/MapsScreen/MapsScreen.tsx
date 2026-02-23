@@ -2,14 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Linking, Text, View } from 'react-native';
 import MapView, { Circle, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
-import Constants from 'expo-constants';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MosqueBottomSheet, Mosque, PrayerTimes, IqamahTimes } from '../MosqueBottomSheet/MosqueBottomSheet';
+import { fetchMosques, fetchAladhanTimings, fetchMosqueTimings } from '../../api';
 import { styles } from './styles';
-
-// In Expo Go / dev builds, hostUri is the dev server address (e.g. "192.168.1.5:8081").
-// Stripping the port gives us the machine's LAN IP, which works on both simulator and real device.
-const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
-const API_BASE = `http://${devHost}:3000`;
 
 const RADIUS_METERS = 1000;
 
@@ -47,19 +43,48 @@ function resolveIqamahTime(value: string | undefined, adhan: string): string | u
 }
 
 export const MapsScreen = () => {
-  const [mosques, setMosques] = useState<Mosque[]>([]);
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
-  const [iqamahTimes, setIqamahTimes] = useState<IqamahTimes | null>(null);
-  const [isPrayerTimesLoading, setIsPrayerTimesLoading] = useState(false);
   const mapRef = useRef<MapView>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetch(`${API_BASE}/mosques`)
-      .then(r => r.json())
-      .then(setMosques)
-      .catch(() => setMosques([]));
-  }, []);
+  const { data: mosques = [] } = useQuery({
+    queryKey: ['mosques'],
+    queryFn: fetchMosques,
+  });
+
+  const { data: prayerData, isFetching: isPrayerTimesLoading } = useQuery({
+    queryKey: ['prayerData', selectedMosque?.id],
+    enabled: !!selectedMosque,
+    queryFn: async () => {
+      const { latitude, longitude } = selectedMosque!.coordinate;
+      const [adhan, timings] = await Promise.all([
+        fetchAladhanTimings(latitude, longitude),
+        fetchMosqueTimings(selectedMosque!.id),
+      ]);
+
+      const prayerTimes: PrayerTimes = {
+        Fajr: to12h(adhan.Fajr),
+        Dhuhr: to12h(adhan.Dhuhr),
+        Asr: to12h(adhan.Asr),
+        Maghrib: to12h(adhan.Maghrib),
+        Isha: to12h(adhan.Isha),
+      };
+
+      let iqamahTimes: IqamahTimes | null = null;
+      if (timings) {
+        const f = timings.fixed;
+        iqamahTimes = {
+          Fajr: resolveIqamahTime(f.fajr, adhan.Fajr),
+          Dhuhr: resolveIqamahTime(f.dhuhr, adhan.Dhuhr),
+          Asr: resolveIqamahTime(f.asr, adhan.Asr),
+          Maghrib: resolveIqamahTime(f.maghrib, adhan.Maghrib),
+          Isha: resolveIqamahTime(f.isha, adhan.Isha),
+        };
+      }
+
+      return { prayerTimes, iqamahTimes };
+    },
+  });
 
   useEffect(() => {
     (async () => {
@@ -80,88 +105,18 @@ export const MapsScreen = () => {
     })();
   }, []);
 
-  const handleMarkerPress = useCallback(async (mosque: Mosque) => {
+  const handleMarkerPress = useCallback((mosque: Mosque) => {
     setSelectedMosque(mosque);
-    setPrayerTimes(null);
-    setIqamahTimes(null);
-    setIsPrayerTimesLoading(true);
-
-    try {
-      const timestamp = Math.floor(Date.now() / 1000);
-      const { latitude, longitude } = mosque.coordinate;
-
-      const [aladhanRes, timingsRes] = await Promise.all([
-        fetch(`https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=2`),
-        fetch(`${API_BASE}/mosques/${mosque.id}/timings`),
-      ]);
-
-      const aladhanJson = await aladhanRes.json();
-      const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
-      // Keep raw 24h for offset calculation, display 12h in UI
-      const adhan = { Fajr, Dhuhr, Asr, Maghrib, Isha };
-      setPrayerTimes({
-        Fajr: to12h(Fajr),
-        Dhuhr: to12h(Dhuhr),
-        Asr: to12h(Asr),
-        Maghrib: to12h(Maghrib),
-        Isha: to12h(Isha),
-      });
-
-      if (timingsRes.ok) {
-        const timingsJson = await timingsRes.json();
-        const f = timingsJson.fixed;
-        setIqamahTimes({
-          Fajr: resolveIqamahTime(f.fajr, adhan.Fajr),
-          Dhuhr: resolveIqamahTime(f.dhuhr, adhan.Dhuhr),
-          Asr: resolveIqamahTime(f.asr, adhan.Asr),
-          Maghrib: resolveIqamahTime(f.maghrib, adhan.Maghrib),
-          Isha: resolveIqamahTime(f.isha, adhan.Isha),
-        });
-      }
-    } catch {
-      setPrayerTimes(null);
-    } finally {
-      setIsPrayerTimesLoading(false);
-    }
   }, []);
 
   const handleSheetClose = useCallback(() => {
     setSelectedMosque(null);
-    setPrayerTimes(null);
-    setIqamahTimes(null);
   }, []);
 
-  // Re-fetches only the iqamah timings after an edit, using the last known adhan times.
-  const handleTimingsUpdated = useCallback(async () => {
+  const handleTimingsUpdated = useCallback(() => {
     if (!selectedMosque) return;
-    try {
-      const timingsRes = await fetch(`${API_BASE}/mosques/${selectedMosque.id}/timings`);
-      if (!timingsRes.ok) return;
-      const timingsJson = await timingsRes.json();
-
-      // We need raw 24h adhan times to resolve relative offsets.
-      // Re-fetch from Aladhan rather than storing raw times in state.
-      const timestamp = Math.floor(Date.now() / 1000);
-      const { latitude, longitude } = selectedMosque.coordinate;
-      const aladhanRes = await fetch(
-        `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=2`
-      );
-      const aladhanJson = await aladhanRes.json();
-      const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
-      const adhan = { Fajr, Dhuhr, Asr, Maghrib, Isha };
-
-      const f = timingsJson.fixed;
-      setIqamahTimes({
-        Fajr: resolveIqamahTime(f.fajr, adhan.Fajr),
-        Dhuhr: resolveIqamahTime(f.dhuhr, adhan.Dhuhr),
-        Asr: resolveIqamahTime(f.asr, adhan.Asr),
-        Maghrib: resolveIqamahTime(f.maghrib, adhan.Maghrib),
-        Isha: resolveIqamahTime(f.isha, adhan.Isha),
-      });
-    } catch {
-      // Silently fail — stale times remain visible
-    }
-  }, [selectedMosque]);
+    queryClient.invalidateQueries({ queryKey: ['prayerData', selectedMosque.id] });
+  }, [selectedMosque, queryClient]);
 
   const handleGetDirections = useCallback(() => {
     if (!selectedMosque) return;
@@ -216,10 +171,9 @@ export const MapsScreen = () => {
 
       <MosqueBottomSheet
         mosque={selectedMosque}
-        prayerTimes={prayerTimes}
-        iqamahTimes={iqamahTimes}
+        prayerTimes={prayerData?.prayerTimes ?? null}
+        iqamahTimes={prayerData?.iqamahTimes ?? null}
         isLoading={isPrayerTimesLoading}
-        apiBase={API_BASE}
         onClose={handleSheetClose}
         onGetDirections={handleGetDirections}
         onTimingsUpdated={handleTimingsUpdated}

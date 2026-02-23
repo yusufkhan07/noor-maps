@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
 import { AddTimingsModal, TimingsForm } from '../AddTimingsModal/AddTimingsModal';
+import { patchMosqueTimings } from '../../api';
 import { styles } from './styles';
 
 export type Mosque = {
@@ -38,7 +40,6 @@ type Props = {
   prayerTimes: PrayerTimes | null;
   iqamahTimes?: IqamahTimes | null;
   isLoading: boolean;
-  apiBase: string;
   onClose: () => void;
   onGetDirections: () => void;
   onTimingsUpdated: () => void;
@@ -91,7 +92,6 @@ export const MosqueBottomSheet = ({
   prayerTimes,
   iqamahTimes,
   isLoading,
-  apiBase,
   onClose,
   onGetDirections,
   onTimingsUpdated,
@@ -143,6 +143,15 @@ export const MosqueBottomSheet = ({
     })
   ).current;
 
+  const { mutateAsync: saveTimings } = useMutation({
+    mutationFn: ({ mosqueId, fixed }: { mosqueId: string; fixed: Record<string, string> }) =>
+      patchMosqueTimings(mosqueId, fixed),
+    onSuccess: () => {
+      setShowAddTimings(false);
+      onTimingsUpdated();
+    },
+  });
+
   const handleSubmitTimings = async (form: TimingsForm): Promise<void> => {
     if (!mosque) return;
 
@@ -159,16 +168,7 @@ export const MosqueBottomSheet = ({
       if (value !== undefined) fixed[apiKey] = value;
     }
 
-    const res = await fetch(`${apiBase}/mosques/${mosque.id}/timings`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fixed }),
-    });
-
-    if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-    setShowAddTimings(false);
-    onTimingsUpdated();
+    await saveTimings({ mosqueId: mosque.id, fixed });
   };
 
   return (
