@@ -1,0 +1,32 @@
+[
+  {
+    "mosqueId": "1",
+    "fixed": {
+      "fajr": "05:45",
+      "dhuhr": "13:15",
+      "asr": "16:30",
+      "maghrib": "+5",
+      "isha": "21:00"
+    }
+  },
+  {
+    "mosqueId": "2",
+    "fixed": {
+      "fajr": "05:50",
+      "dhuhr": "13:20",
+      "asr": "16:35",
+      "maghrib": "+5",
+      "isha": "21:05"
+    }
+  },
+  {
+    "mosqueId": "3",
+    "fixed": {
+      "fajr": "05:40",
+      "dhuhr": "13:10",
+      "asr": "16:25",
+      "maghrib": "+5",
+      "isha": "20:55"
+    }
+  }
+]
