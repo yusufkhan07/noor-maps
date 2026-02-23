@@ -19,9 +19,18 @@ const INITIAL_REGION = {
   longitudeDelta: 0.08,
 };
 
+// Converts a 24h "HH:MM" string to 12h "H:MM AM/PM".
+function to12h(time: string): string {
+  const [hourStr, minStr] = time.split(':');
+  const h = Number.parseInt(hourStr, 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${minStr} ${ampm}`;
+}
+
 // Resolves an iqamah time value against the adhan time.
-// "+N" means N minutes after adhan → returns absolute "HH:MM".
-// "HH:MM" is returned as-is. Anything else (empty, undefined) returns undefined.
+// "+N" means N minutes after adhan → returns absolute "H:MM AM/PM".
+// "HH:MM" is returned as 12h. Anything else (empty, undefined) returns undefined.
 function resolveIqamahTime(value: string | undefined, adhan: string): string | undefined {
   if (!value) return undefined;
   if (value.startsWith('+')) {
@@ -31,9 +40,9 @@ function resolveIqamahTime(value: string | undefined, adhan: string): string | u
     const total = Number.parseInt(hourStr, 10) * 60 + Number.parseInt(minStr, 10) + offset;
     const h = Math.floor(total / 60) % 24;
     const m = total % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    return to12h(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
   }
-  return value;
+  return to12h(value);
 }
 
 export const MapsScreen = () => {
@@ -87,8 +96,15 @@ export const MapsScreen = () => {
 
       const aladhanJson = await aladhanRes.json();
       const { Fajr, Dhuhr, Asr, Maghrib, Isha } = aladhanJson.data.timings;
+      // Keep raw 24h for offset calculation, display 12h in UI
       const adhan = { Fajr, Dhuhr, Asr, Maghrib, Isha };
-      setPrayerTimes(adhan);
+      setPrayerTimes({
+        Fajr: to12h(Fajr),
+        Dhuhr: to12h(Dhuhr),
+        Asr: to12h(Asr),
+        Maghrib: to12h(Maghrib),
+        Isha: to12h(Isha),
+      });
 
       if (timingsRes.ok) {
         const timingsJson = await timingsRes.json();
