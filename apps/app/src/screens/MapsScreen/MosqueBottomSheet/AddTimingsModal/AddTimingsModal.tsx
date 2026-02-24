@@ -69,26 +69,36 @@ export const AddTimingsModal = ({
   const [activePrayer, setActivePrayer] = useState<keyof PrayerTimes | null>(
     null,
   );
+  const [draftEntry, setDraftEntry] = useState<PrayerEntry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSelectPrayer = (key: keyof PrayerTimes) => {
-    if (!form[key]) {
-      setForm((f) => ({ ...f, [key]: defaultEntry() }));
-    }
+    setDraftEntry(form[key] ? { ...form[key]! } : defaultEntry());
     setActivePrayer(key);
     setStep('edit');
+  };
+
+  const handleDone = () => {
+    if (activePrayer && draftEntry) {
+      setForm((f) => ({ ...f, [activePrayer]: draftEntry }));
+    }
+    setStep('select');
+    setActivePrayer(null);
+    setDraftEntry(null);
   };
 
   const handleBack = () => {
     setStep('select');
     setActivePrayer(null);
+    setDraftEntry(null);
   };
 
   const handleClose = () => {
     setForm({});
     setStep('select');
     setActivePrayer(null);
+    setDraftEntry(null);
     setError(null);
     onClose();
   };
@@ -101,6 +111,7 @@ export const AddTimingsModal = ({
       setForm({});
       setStep('select');
       setActivePrayer(null);
+      setDraftEntry(null);
     } catch {
       setError('Failed to save timings. Please try again.');
     } finally {
@@ -117,19 +128,14 @@ export const AddTimingsModal = ({
     });
     setStep('select');
     setActivePrayer(null);
+    setDraftEntry(null);
   };
 
   const updateEntry = (patch: Partial<PrayerEntry>) => {
-    if (!activePrayer) return;
-    setForm((f) => ({
-      ...f,
-      [activePrayer]: { ...(f[activePrayer] ?? defaultEntry()), ...patch },
-    }));
+    setDraftEntry((d) => ({ ...(d ?? defaultEntry()), ...patch }));
   };
 
-  const activeEntry = activePrayer
-    ? (form[activePrayer] ?? defaultEntry())
-    : null;
+  const activeEntry = draftEntry;
   const activePrayerLabel =
     PRAYERS.find(([k]) => k === activePrayer)?.[1] ?? '';
   const filledCount = Object.keys(form).length;
@@ -162,7 +168,7 @@ export const AddTimingsModal = ({
           </Text>
 
           <TouchableOpacity
-            onPress={step === 'edit' ? handleBack : handleSubmit}
+            onPress={step === 'edit' ? handleDone : handleSubmit}
             style={styles.navButton}
             disabled={step === 'select' && (filledCount === 0 || isSubmitting)}
           >
@@ -209,7 +215,7 @@ export const AddTimingsModal = ({
                       <Text style={styles.prayerFilledValue}>
                         {entry.mode === 'fixed'
                           ? formatTime(entry.time)
-                          : `+${entry.offsetMinutes} min`}
+                          : `${entry.offsetMinutes} min after azan`}
                       </Text>
                     ) : (
                       <Text style={styles.prayerEmptyValue}>Tap to set</Text>
@@ -328,7 +334,7 @@ export const AddTimingsModal = ({
                       updateEntry({
                         offsetMinutes: Math.max(
                           1,
-                          activeEntry.offsetMinutes - 5,
+                          activeEntry.offsetMinutes - 1,
                         ),
                       })
                     }
@@ -344,7 +350,7 @@ export const AddTimingsModal = ({
                       updateEntry({
                         offsetMinutes: Math.min(
                           120,
-                          activeEntry.offsetMinutes + 5,
+                          activeEntry.offsetMinutes + 1,
                         ),
                       })
                     }
