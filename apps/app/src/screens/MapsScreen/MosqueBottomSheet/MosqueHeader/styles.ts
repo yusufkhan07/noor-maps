@@ -13,11 +13,33 @@ export const styles = StyleSheet.create({
     color: '#1a1a1a',
     flex: 1,
   },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   favButton: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f2f2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f2f2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIcon: {
+    fontSize: 14,
+    color: '#666',
   },
   favIcon: {
-    fontSize: 24,
+    fontSize: 18,
     color: '#ccc',
   },
   favIconActive: {

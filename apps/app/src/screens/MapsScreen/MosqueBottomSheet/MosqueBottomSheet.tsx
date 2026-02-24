@@ -151,7 +151,7 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
         >
           {mosque && (
             <>
@@ -159,6 +159,7 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
                 title={mosque.title}
                 isFavourite={isFavourite}
                 onToggleFavourite={() => setIsFavourite((f) => !f)}
+                onClose={onClose}
               />
 
               <ActionBar

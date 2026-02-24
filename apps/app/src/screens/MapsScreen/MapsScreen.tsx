@@ -53,7 +53,9 @@ export const MapsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <SearchBar onSelectResult={handleSelectResult} onClear={() => setSearchPin(null)} />
+      {!selectedMosque && (
+        <SearchBar onSelectResult={handleSelectResult} onClear={() => setSearchPin(null)} />
+      )}
       <MapView
         ref={mapRef}
         style={styles.map}

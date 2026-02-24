@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#d0d0d0',
   },
   scroll: {
-    flexGrow: 0,
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
