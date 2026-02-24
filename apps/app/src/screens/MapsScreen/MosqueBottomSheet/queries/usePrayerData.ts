@@ -32,8 +32,9 @@ type PrayerData = {
 export function usePrayerData(mosque: Mosque | null): {
   prayerData: PrayerData | undefined;
   isLoading: boolean;
+  isError: boolean;
 } {
-  const { data: prayerData, isFetching: isLoading } = useQuery({
+  const { data: prayerData, isFetching: isLoading, isError } = useQuery({
     queryKey: ['prayerData', mosque?.id],
     enabled: !!mosque,
     queryFn: async (): Promise<PrayerData> => {
@@ -67,5 +68,5 @@ export function usePrayerData(mosque: Mosque | null): {
     },
   });
 
-  return { prayerData, isLoading };
+  return { prayerData, isLoading, isError };
 }

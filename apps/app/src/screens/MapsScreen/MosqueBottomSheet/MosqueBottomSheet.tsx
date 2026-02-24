@@ -13,6 +13,7 @@ import {
   TimingsForm,
 } from './AddTimingsModal/AddTimingsModal';
 import { ActionBar } from './ActionBar/ActionBar';
+import { MissingTimingsBanner } from '../../../components/MissingTimingsBanner/MissingTimingsBanner';
 import { MosqueHeader } from './MosqueHeader/MosqueHeader';
 import { MosqueInfo } from './MosqueInfo/MosqueInfo';
 import { useSaveTimings } from './mutations/useSaveTimings';
@@ -31,7 +32,7 @@ const SHEET_HEIGHT = SCREEN_HEIGHT;
 const DISMISS_THRESHOLD = 80;
 
 export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
-  const { prayerData, isLoading } = usePrayerData(mosque);
+  const { prayerData, isLoading, isError } = usePrayerData(mosque);
   const prayerTimes = prayerData?.prayerTimes ?? null;
   const iqamahTimes = prayerData?.iqamahTimes ?? null;
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -172,6 +173,12 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
                 iqamahTimes={iqamahTimes}
                 isLoading={isLoading}
               />
+
+              {!isLoading && !isError && prayerTimes && !iqamahTimes && (
+                <MissingTimingsBanner
+                  onAddTimings={() => setShowAddTimings(true)}
+                />
+              )}
 
               <View style={styles.divider} />
 
