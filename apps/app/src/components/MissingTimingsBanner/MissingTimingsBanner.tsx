@@ -15,20 +15,15 @@ export const MissingTimingsBanner = ({ onAddTimings }: Props) => {
   if (dismissed) return null;
 
   return (
-    <View style={styles.banner}>
+    <View style={styles.card}>
       <Text style={styles.icon}>🕌</Text>
-      <View style={styles.body}>
-        <Text style={styles.title}>{T.title}</Text>
-        <Text style={styles.description}>{T.description}</Text>
-        <TouchableOpacity style={styles.cta} onPress={onAddTimings}>
-          <Text style={styles.ctaText}>{T.cta}</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        style={styles.dismissBtn}
-        onPress={() => setDismissed(true)}
-      >
-        <Text style={styles.dismissText}>✕</Text>
+      <Text style={styles.title}>{T.title}</Text>
+      <Text style={styles.description}>{T.description}</Text>
+      <TouchableOpacity style={styles.cta} onPress={onAddTimings} activeOpacity={0.8}>
+        <Text style={styles.ctaText}>{T.cta}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setDismissed(true)} activeOpacity={0.6}>
+        <Text style={styles.dismissText}>{T.dismiss}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -4,7 +4,8 @@ export const t = {
     title: 'Iqamah times are missing',
     description:
       'Be the reason someone prays on time. Adding the iqamah times for this mosque is a Sadaqah Jariyah — a continuous reward for everyone who benefits from it.',
-    cta: 'Add timings',
+    cta: 'Add Iqamah Times',
+    dismiss: 'Not now',
   },
 
   // ── AddTimingsModal ──────────────────────────────────────

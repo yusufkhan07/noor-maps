@@ -169,17 +169,17 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
 
               <View style={styles.divider} />
 
+              {!isLoading && !isError && prayerTimes && (!iqamahTimes || Object.values(iqamahTimes).some((v) => !v)) && (
+                <MissingTimingsBanner
+                  onAddTimings={() => setShowAddTimings(true)}
+                />
+              )}
+
               <PrayerTimesTable
                 prayerTimes={prayerTimes}
                 iqamahTimes={iqamahTimes}
                 isLoading={isLoading}
               />
-
-              {!isLoading && !isError && prayerTimes && !iqamahTimes && (
-                <MissingTimingsBanner
-                  onAddTimings={() => setShowAddTimings(true)}
-                />
-              )}
 
               <View style={styles.divider} />
 
