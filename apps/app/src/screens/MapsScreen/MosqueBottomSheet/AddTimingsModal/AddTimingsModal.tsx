@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { t } from '../../../../app/translations';
+import { ConfirmationModal } from '../../../../components/ConfirmationModal/ConfirmationModal';
 import { PrayerTimes } from '../../MosqueBottomSheet/MosqueBottomSheet';
 import { DrumRoll } from './DrumRoll';
 import { styles } from './styles';
+
+const T = t.addTimings;
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
 const MINUTES = Array.from({ length: 60 }, (_, i) => i); // 0–59
@@ -71,6 +75,7 @@ export const AddTimingsModal = ({
   );
   const [draftEntry, setDraftEntry] = useState<PrayerEntry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSelectPrayer = (key: keyof PrayerTimes) => {
@@ -103,7 +108,13 @@ export const AddTimingsModal = ({
     onClose();
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitPress = () => {
+    setError(null);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
     setError(null);
     try {
@@ -112,8 +123,9 @@ export const AddTimingsModal = ({
       setStep('select');
       setActivePrayer(null);
       setDraftEntry(null);
-    } catch {
-      setError('Failed to save timings. Please try again.');
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      setError(status === 429 ? T.rateLimitError : T.submitError);
     } finally {
       setIsSubmitting(false);
     }
@@ -151,7 +163,7 @@ export const AddTimingsModal = ({
         <View style={styles.header}>
           {step === 'edit' ? (
             <TouchableOpacity onPress={handleBack} style={styles.navButton}>
-              <Text style={styles.navButtonText}>‹ Back</Text>
+              <Text style={styles.navButtonText}>{T.back}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -159,16 +171,16 @@ export const AddTimingsModal = ({
               style={styles.navButton}
               disabled={isSubmitting}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{T.cancel}</Text>
             </TouchableOpacity>
           )}
 
           <Text style={styles.title}>
-            {step === 'select' ? 'Select Prayer' : activePrayerLabel}
+            {step === 'select' ? T.selectPrayer : activePrayerLabel}
           </Text>
 
           <TouchableOpacity
-            onPress={step === 'edit' ? handleDone : handleSubmit}
+            onPress={step === 'edit' ? handleDone : handleSubmitPress}
             style={styles.navButton}
             disabled={step === 'select' && (filledCount === 0 || isSubmitting)}
           >
@@ -183,7 +195,7 @@ export const AddTimingsModal = ({
                     styles.submitTextDisabled,
                 ]}
               >
-                {step === 'edit' ? 'Done' : 'Submit'}
+                {step === 'edit' ? T.done : T.submit}
               </Text>
             )}
           </TouchableOpacity>
@@ -215,10 +227,10 @@ export const AddTimingsModal = ({
                       <Text style={styles.prayerFilledValue}>
                         {entry.mode === 'fixed'
                           ? formatTime(entry.time)
-                          : `${entry.offsetMinutes} min after azan`}
+                          : T.minAfterAzan(entry.offsetMinutes)}
                       </Text>
                     ) : (
-                      <Text style={styles.prayerEmptyValue}>Tap to set</Text>
+                      <Text style={styles.prayerEmptyValue}>{T.tapToSet}</Text>
                     )}
                     <Text style={styles.chevron}>›</Text>
                   </View>
@@ -226,9 +238,7 @@ export const AddTimingsModal = ({
               );
             })}
 
-            <Text style={styles.note}>
-              Timings will be reviewed before being shown to other users.
-            </Text>
+            <Text style={styles.note}>{T.reviewNote}</Text>
           </View>
         )}
 
@@ -250,7 +260,7 @@ export const AddTimingsModal = ({
                     activeEntry.mode === 'fixed' && styles.modeTabTextActive,
                   ]}
                 >
-                  Fixed time
+                  {T.fixedTime}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -266,7 +276,7 @@ export const AddTimingsModal = ({
                     activeEntry.mode === 'relative' && styles.modeTabTextActive,
                   ]}
                 >
-                  Relative
+                  {T.relative}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -324,7 +334,7 @@ export const AddTimingsModal = ({
               /* Relative: offset minutes */
               <View style={styles.relativeEditor}>
                 <Text style={styles.relativeDesc}>
-                  Iqamah is after the {activePrayerLabel} Adhan by
+                  {T.relativeDesc(activePrayerLabel)}
                 </Text>
 
                 <View style={styles.stepper}>
@@ -342,7 +352,7 @@ export const AddTimingsModal = ({
                     <Text style={styles.stepperBtnText}>−</Text>
                   </TouchableOpacity>
                   <Text style={styles.stepperValue}>
-                    {activeEntry.offsetMinutes} min
+                    {T.minutes(activeEntry.offsetMinutes)}
                   </Text>
                   <TouchableOpacity
                     style={styles.stepperBtn}
@@ -363,12 +373,22 @@ export const AddTimingsModal = ({
 
             {activePrayer && form[activePrayer] && (
               <TouchableOpacity style={styles.unsetBtn} onPress={handleUnset}>
-                <Text style={styles.unsetBtnText}>Remove</Text>
+                <Text style={styles.unsetBtnText}>{T.remove}</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
       </SafeAreaView>
+
+      <ConfirmationModal
+        visible={showConfirm}
+        title={T.confirmTitle}
+        body={T.confirmBody}
+        submitLabel={T.confirmSubmit}
+        cancelLabel={T.confirmCancel}
+        onSubmit={handleConfirmSubmit}
+        onCancel={() => setShowConfirm(false)}
+      />
     </Modal>
   );
 };
