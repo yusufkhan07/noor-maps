@@ -12,12 +12,17 @@ export async function patchMosqueTimings(req: Request, res: Response): Promise<v
     return;
   }
 
-  const updated = await mosqueTimingsRepository.update(id, { fixed, scheduleEntry });
+  try {
+    const updated = await mosqueTimingsRepository.update(id, { fixed, scheduleEntry });
 
-  if (!updated) {
-    res.status(404).json({ error: `No timings found for mosque ${id}` });
-    return;
+    if (!updated) {
+      res.status(404).json({ error: `No timings found for mosque ${id}` });
+      return;
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error('[patchMosqueTimings] error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  res.json(updated);
 }

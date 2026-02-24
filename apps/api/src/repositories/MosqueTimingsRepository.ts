@@ -67,34 +67,54 @@ export class MosqueTimingsRepository {
 
   async update(mosqueId: string, patch: TimingsPatch): Promise<MosqueTimings | undefined> {
     const now = new Date().toISOString();
-    const updatePayload: Partial<MosqueTimingsRow> = patch.fixed
-      ? buildFixedPayload(patch.fixed, now)
-      : {};
+
+    // Check if a row already exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('mosque_timings')
+      .select('*')
+      .eq('mosque_id', mosqueId)
+      .single();
+    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+    const rowExists = fetchError?.code !== 'PGRST116' && existing != null;
+
+    let payload: Partial<MosqueTimingsRow> & { mosque_id: string };
+
+    if (rowExists) {
+      // UPDATE: only set the fields that were provided
+      payload = {
+        mosque_id: mosqueId,
+        ...(patch.fixed ? buildFixedPayload(patch.fixed, now) : {}),
+      };
+    } else {
+      // INSERT: fill missing prayer time fields with empty string to satisfy NOT NULL
+      const fixedWithDefaults: IqamaFixed = {
+        fajr: patch.fixed?.fajr ?? '',
+        dhuhr: patch.fixed?.dhuhr ?? '',
+        asr: patch.fixed?.asr ?? '',
+        maghrib: patch.fixed?.maghrib ?? '',
+        isha: patch.fixed?.isha ?? '',
+      };
+      payload = {
+        mosque_id: mosqueId,
+        ...buildFixedPayload(fixedWithDefaults, now),
+        schedule: [],
+      };
+    }
 
     if (patch.scheduleEntry) {
-      const { data: current, error: fetchError } = await supabase
-        .from('mosque_timings')
-        .select('schedule')
-        .eq('mosque_id', mosqueId)
-        .single();
-      if (fetchError?.code === 'PGRST116') return undefined;
-      if (fetchError) throw fetchError;
-
+      const existingSchedule = rowExists
+        ? ((existing as MosqueTimingsRow).schedule ?? [])
+        : [];
       const { effectiveFrom, fixed } = patch.scheduleEntry;
       const newEntry: ScheduleEntry = { effectiveFrom, updatedAt: now, fixed };
-      updatePayload.schedule = upsertScheduleEntry(
-        (current as MosqueTimingsRow).schedule ?? [],
-        newEntry
-      );
+      payload.schedule = upsertScheduleEntry(existingSchedule, newEntry);
     }
 
     const { data, error } = await supabase
       .from('mosque_timings')
-      .update(updatePayload)
-      .eq('mosque_id', mosqueId)
+      .upsert(payload, { onConflict: 'mosque_id' })
       .select()
       .single();
-    if (error?.code === 'PGRST116') return undefined;
     if (error) throw error;
     return rowToMosqueTimings(data as MosqueTimingsRow);
   }
