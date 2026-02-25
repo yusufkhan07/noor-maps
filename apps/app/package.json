@@ -16,12 +16,17 @@
     "@nx/js": "*",
     "@nx/react": "*",
     "@nx/rollup": "*",
+    "@react-native-async-storage/async-storage": "*",
     "@react-navigation/bottom-tabs": "*",
     "@react-navigation/native": "*",
     "@testing-library/react-native": "*",
     "enhanced-resolve": "*",
+    "@supabase/supabase-js": "*",
+    "@tanstack/react-query": "*",
     "expo": "*",
+    "expo-auth-session": "*",
     "expo-location": "*",
+    "expo-web-browser": "*",
     "expo-splash-screen": "*",
     "expo-status-bar": "*",
     "expo-system-ui": "*",
@@ -40,5 +45,6 @@
     "semver": "*",
     "tsconfig-paths": "*",
     "tslib": "*"
-  }
+  },
+  "devDependencies": {}
 }

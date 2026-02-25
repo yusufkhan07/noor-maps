@@ -3,47 +3,46 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
     paddingHorizontal: 32,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
-    color: '#333333',
-    marginBottom: 32,
-  },
-  authSection: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 16,
-  },
-  signedInText: {
-    fontSize: 15,
-    color: '#555',
+    color: '#1a1a1a',
     textAlign: 'center',
+    marginBottom: 8,
   },
-  signInButton: {
+  subtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 48,
+  },
+  buttons: {
+    width: '100%',
+    gap: 12,
+  },
+  googleButton: {
     width: '100%',
     paddingVertical: 14,
     borderRadius: 12,
     backgroundColor: '#1a6b3c',
     alignItems: 'center',
   },
-  signInButtonText: {
+  googleButtonText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
   },
-  signOutButton: {
+  appleButton: {
     width: '100%',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
+    height: 50,
   },
-  signOutButtonText: {
-    fontSize: 15,
-    color: '#666',
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

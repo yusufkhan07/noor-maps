@@ -39,7 +39,8 @@
         {
           "locationWhenInUsePermission": "Allow Noor Maps to show nearby mosques and prayer times."
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

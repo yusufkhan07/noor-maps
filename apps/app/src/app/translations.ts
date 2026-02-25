@@ -34,4 +34,21 @@ export const t = {
     confirmSubmit: 'Submit',
     confirmCancel: 'Go Back',
   },
+
+  // ── Login ────────────────────────────────────────────────
+  login: {
+    title: 'Welcome to Noor Maps',
+    subtitle: 'Sign in to save your favourite mosques across devices.',
+    continueWithGoogle: 'Continue with Google',
+    errorTitle: 'Sign In Failed',
+    errorMessage: 'Something went wrong. Please try again.',
+  },
+
+  // ── Menu ─────────────────────────────────────────────────
+  menu: {
+    title: 'Menu',
+    signIn: 'Sign In',
+    signOut: 'Sign Out',
+    signedInAs: 'Signed in as',
+  },
 };
