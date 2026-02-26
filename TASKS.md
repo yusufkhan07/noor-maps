@@ -8,6 +8,113 @@
 
 ---
 
+## UI & Polish
+
+### [FEATURE] Show user's current location on the map
+- Display a "blue dot" (or equivalent) on the `MapsScreen` map indicating the user's current location.
+- Use the location permission already requested by `expo-location` — no additional permission flow needed.
+- MapKit on iOS supports this natively via the `showsUserLocation` prop on `MapView` — enable it.
+- Add a "re-centre" button (e.g. bottom-right corner) that animates the map back to the user's location if they have panned away.
+
+### [TASK] Add icon library and replace all emoji icons
+- Install an icon library (e.g. `@expo/vector-icons` which bundles Ionicons, MaterialIcons, etc. — already available in Expo, or `react-native-vector-icons`).
+- Replace all emoji icons currently used in the app (e.g. `★`, `🗺`, `☰` in `App.tsx` tab bar, and any others across screens/components) with proper vector icons.
+- Ensure icons scale correctly across device sizes and respect system dark/light mode where applicable.
+
+### [FEATURE] Dark mode / theme support
+- The app should automatically follow the device's light/dark mode setting (`Appearance` API in React Native / `useColorScheme` hook).
+- Create a `ThemeContext` (or integrate into an existing context) that exposes the current theme and themed colour tokens.
+- All screens and components should consume theme colours from the context rather than hardcoded values.
+- Styles should be updated across the entire app to support both themes.
+- Tab bar, bottom sheets, modals, and map overlays all need dark variants.
+
+---
+
+## Prayer Times Display
+
+### [FEATURE] Show Asr 1 and Asr 2
+- The prayer times table in `MosqueBottomSheet` currently shows a single Asr time.
+- Some mosques follow the Hanafi madhab (Asr 2) and some the Shafi'i madhab (Asr 1) — many offer both.
+- Update the data model, backend, and UI to support two separate Asr fields (`asr_1`, `asr_2`).
+- Both should be shown as separate rows in the prayer times table when both are present.
+
+### [FEATURE] Show Jummah 1 and Jummah 2
+- Some mosques hold two Jummah (Friday prayer) congregations.
+- Add optional `jummah_1` and `jummah_2` fields to the prayer times data model and backend.
+- Display both in the prayer times table when present; hide if not set (optional for the mosque).
+- The `AddTimingsModal` should allow entering 0, 1, or 2 Jummah times.
+
+### [FEATURE] Show next prayer time
+- In the `MosqueBottomSheet`, highlight or display which prayer is coming up next and how long until it starts.
+- Use the device's current local time compared to the mosque's prayer times to determine the next prayer.
+- Display format: e.g. "Next: Asr in 1h 24m" — shown prominently near the top of the bottom sheet.
+- Must account for timezone (see timezone task below).
+
+### [FEATURE] Timezone handling
+- Prayer times stored in the database are local times (no timezone info). The app must display them correctly regardless of where the user's device is set.
+- **Decision needed:** Store times as plain `HH:MM` strings (timezone-naive, interpreted as local mosque time) vs. storing with UTC offset.
+- Recommended approach: store as `HH:MM` strings and attach the mosque's IANA timezone (derived from its coordinates using a reverse-geocoding or timezone lookup library e.g. `geo-tz`).
+- On the frontend, use the mosque's timezone (not the device timezone) when displaying times and calculating "next prayer".
+- This affects: prayer times table display, next-prayer countdown, and push notification scheduling.
+
+---
+
+## Community & Data Quality
+
+### [FEATURE] Mosque amenities
+- Each mosque should display a set of amenities indicating available facilities.
+- Amenities (all boolean, stored on the `mosques` table):
+  - Female prayer section
+  - Toilets / Wudu facilities
+  - Wheelchair accessible
+  - Parking
+- Display amenities as icon+label chips in the `MosqueBottomSheet` (e.g. below the mosque name / address).
+- Greyed-out or hidden when not available — TBD on design (show all with ticked/unticked vs. show only available ones).
+- Admin/backend: amenities should be editable via the Supabase dashboard initially; a user-facing "suggest correction" flow can come later.
+- **Post-MVP:** Allow filtering/searching mosques on the map by amenity (e.g. "show only mosques with female section"). See Post-MVP section.
+
+### [FEATURE] Submit a missing mosque
+- Allow users to report a mosque that is not yet in the database.
+- Entry point: a button in the MapsScreen (e.g. floating button or in the menu).
+- Form fields: mosque name, address / location (with map picker or auto-detect current location), optional notes.
+- Submission stored in a Supabase table (e.g. `mosque_submissions`) for admin review before being added to the main `mosques` table.
+- Requires authentication — prompt unauthenticated users to sign in before submitting.
+
+### [FEATURE] Report an incorrect or closed mosque
+- Allow users to flag a mosque as incorrect (wrong location, wrong name) or permanently closed / no longer exists.
+- Entry point: a "Report" option in the `MosqueBottomSheet` (e.g. a small link or icon in the action bar).
+- Report types: "Wrong location", "Wrong name", "Mosque closed / no longer exists", "Other".
+- Submissions stored in a Supabase table (e.g. `mosque_reports`) linked to the `mosque_id` and the reporting `user_id`.
+- Requires authentication — prompt unauthenticated users to sign in before reporting.
+- Backend: if a mosque accumulates a threshold of "closed" reports (e.g. 3+), flag it for admin review.
+
+---
+
+## Gamification & Leaderboard
+
+### [FEATURE] Contribution points system
+- Award points to users for community contributions: submitting prayer times, reporting closed mosques, submitting missing mosques, etc.
+- Points stored in Supabase against the user's profile (e.g. a `contributions` table or a `points` column on the `profiles` table).
+- Define a points scale — e.g. prayer time submission = 10 pts, mosque report = 5 pts, new mosque submission = 20 pts.
+- Points should be visible to the user (e.g. in their profile on the Menu screen).
+
+### [FEATURE] Leaderboard screen
+- A leaderboard showing the top contributors ranked by total points.
+- Accessible quickly — either as a tab in the bottom tab navigator or as a prominent button on the Menu screen.
+- Show: rank, display name / avatar, and point total for each user.
+- The current user's own rank should always be visible (sticky row at the bottom if they're outside the top N).
+- Data served from Supabase (a view or query over the `contributions` / `profiles` tables).
+
+### [FEATURE] Contribution rate limit — 2 submissions per 6 hours per mosque
+- Replace the existing "1 per 24 hours" rate limit on prayer time edits.
+- New rule: **2 submissions per mosque per 6-hour window** per user.
+- Enforce on the backend: track `(user_id, mosque_id, submitted_at)` in `timing_submissions`; reject with `429` if 2 or more submissions exist within the last 6 hours for that mosque.
+- **Frontend:** Update the confirmation popup copy to reflect the new limit ("You can submit up to 2 times per mosque every 6 hours").
+- **Frontend:** Show the user's remaining submissions for the current window somewhere visible in `AddTimingsModal` (e.g. "2 submissions remaining this window").
+- **Frontend:** On `429`, show an error message with the time until the window resets.
+
+---
+
 ## Backend
 
 ### [FEATURE] Script to seed / recalculate mosque data
@@ -24,6 +131,7 @@
   - To double-check the times are correct before submitting.
   - That they can only submit once per day.
 - **Frontend:** If the backend returns `429`, show an error message explaining the daily limit has been reached.
+- **Note:** This task will be superseded by the "2 submissions per 6 hours" gamification task above — implement that one instead if starting fresh.
 
 ---
 
@@ -107,6 +215,13 @@
 ---
 
 ## Post-MVP
+
+### [FEATURE] Filter mosques by amenity
+- Add filter controls on the MapsScreen (e.g. a horizontal chip bar or a filter sheet) to show only mosques matching selected amenities.
+- Filters: Female prayer section, Toilets, Wheelchair accessible, Parking.
+- Multiple filters should be combinable (AND logic — mosque must have all selected amenities).
+- Filtered results should update the map pins in real time.
+- Requires the amenities task (MVP) to be completed first.
 
 ### [FEATURE] Qibla direction
 - Show the Qibla direction (direction of Mecca) from the user's current location.
