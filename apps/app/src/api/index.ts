@@ -43,10 +43,22 @@ export async function patchMosqueTimings(
   mosqueId: string,
   fixed: Record<string, string>
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/mosques/${mosqueId}/timings`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fixed }),
-  });
-  if (!res.ok) throw new Error(`Server error: ${res.status}`);
+  const url = `${API_BASE}/mosques/${mosqueId}/timings`;
+  console.log('[patchMosqueTimings] PATCH', url, JSON.stringify({ fixed }));
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fixed }),
+    });
+    console.log('[patchMosqueTimings] response status:', res.status);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('[patchMosqueTimings] error body:', body);
+      throw new Error(`Server error: ${res.status}`);
+    }
+  } catch (err) {
+    console.error('[patchMosqueTimings] fetch threw:', err);
+    throw err;
+  }
 }

@@ -74,8 +74,12 @@ export class MosqueTimingsRepository {
       .select('*')
       .eq('mosque_id', mosqueId)
       .single();
-    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('[MosqueTimingsRepository.update] fetch error:', fetchError);
+      throw fetchError;
+    }
     const rowExists = fetchError?.code !== 'PGRST116' && existing != null;
+    console.log(`[MosqueTimingsRepository.update] mosque ${mosqueId} — rowExists: ${rowExists}`);
 
     let payload: Partial<MosqueTimingsRow> & { mosque_id: string };
 
@@ -103,12 +107,17 @@ export class MosqueTimingsRepository {
       payload.schedule = upsertScheduleEntry(existingSchedule, newEntry);
     }
 
+    console.log('[MosqueTimingsRepository.update] upsert payload:', JSON.stringify(payload));
+
     const { data, error } = await supabase
       .from('mosque_timings')
       .upsert(payload, { onConflict: 'mosque_id' })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error('[MosqueTimingsRepository.update] upsert error:', error);
+      throw error;
+    }
     return rowToMosqueTimings(data as MosqueTimingsRow);
   }
 }

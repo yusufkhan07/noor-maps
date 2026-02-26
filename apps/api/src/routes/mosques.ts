@@ -6,5 +6,5 @@ import { patchMosqueTimings } from '../handlers/patchMosqueTimings';
 export const mosquesRouter = Router();
 
 mosquesRouter.get('/', getMosques);
-mosquesRouter.get('/:id/timings', getMosqueTimings);
-mosquesRouter.patch('/:id/timings', patchMosqueTimings);
+mosquesRouter.get('/:type/:osmId/timings', getMosqueTimings);
+mosquesRouter.patch('/:type/:osmId/timings', patchMosqueTimings);

@@ -4,7 +4,7 @@ import { MosqueTimingsRepository } from '../repositories/MosqueTimingsRepository
 const mosqueTimingsRepository = new MosqueTimingsRepository();
 
 export async function getMosqueTimings(req: Request, res: Response): Promise<void> {
-  const id = req.params['id'] as string;
+  const id = `${req.params['type']}/${req.params['osmId']}`;
   const entry = await mosqueTimingsRepository.findByMosqueId(id);
 
   if (!entry) {
