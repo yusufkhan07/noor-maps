@@ -9,11 +9,11 @@ export type Mosque = {
 };
 
 export type IqamaFixed = {
-  fajr: string;
-  dhuhr: string;
-  asr: string;
-  maghrib: string; // absolute time "HH:mm" or relative offset "+N" minutes after adhan
-  isha: string;
+  fajr?: string;
+  dhuhr?: string;
+  asr?: string;
+  maghrib?: string; // absolute time "HH:mm" or relative offset "+N" minutes after adhan
+  isha?: string;
 };
 
 export type ScheduleEntry = {

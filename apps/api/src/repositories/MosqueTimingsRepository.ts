@@ -3,11 +3,11 @@ import type { IqamaFixed, MosqueTimings, ScheduleEntry } from '../types/Mosque.j
 
 type MosqueTimingsRow = {
   mosque_id: string;
-  fajr: string;
-  dhuhr: string;
-  asr: string;
-  maghrib: string;
-  isha: string;
+  fajr: string | null;
+  dhuhr: string | null;
+  asr: string | null;
+  maghrib: string | null;
+  isha: string | null;
   updated_at: string;
   schedule: ScheduleEntry[];
 };
@@ -16,11 +16,11 @@ function rowToMosqueTimings(row: MosqueTimingsRow): MosqueTimings {
   return {
     mosqueId: row.mosque_id,
     fixed: {
-      fajr: row.fajr,
-      dhuhr: row.dhuhr,
-      asr: row.asr,
-      maghrib: row.maghrib,
-      isha: row.isha,
+      fajr: row.fajr ?? undefined,
+      dhuhr: row.dhuhr ?? undefined,
+      asr: row.asr ?? undefined,
+      maghrib: row.maghrib ?? undefined,
+      isha: row.isha ?? undefined,
     },
     updatedAt: row.updated_at,
     schedule: row.schedule,
@@ -86,17 +86,10 @@ export class MosqueTimingsRepository {
         ...(patch.fixed ? buildFixedPayload(patch.fixed, now) : {}),
       };
     } else {
-      // INSERT: fill missing prayer time fields with empty string to satisfy NOT NULL
-      const fixedWithDefaults: IqamaFixed = {
-        fajr: patch.fixed?.fajr ?? '',
-        dhuhr: patch.fixed?.dhuhr ?? '',
-        asr: patch.fixed?.asr ?? '',
-        maghrib: patch.fixed?.maghrib ?? '',
-        isha: patch.fixed?.isha ?? '',
-      };
+      // INSERT: columns are nullable, so only set fields that were provided
       payload = {
         mosque_id: mosqueId,
-        ...buildFixedPayload(fixedWithDefaults, now),
+        ...(patch.fixed ? buildFixedPayload(patch.fixed, now) : { updated_at: now }),
         schedule: [],
       };
     }
