@@ -13,6 +13,7 @@ import {
   TimingsForm,
 } from './AddTimingsModal/AddTimingsModal';
 import { ActionBar } from './ActionBar/ActionBar';
+import { ReportMistakeModal } from './ReportMistakeModal/ReportMistakeModal';
 import { MissingTimingsBanner } from '../../../components/MissingTimingsBanner/MissingTimingsBanner';
 import { MosqueHeader } from './MosqueHeader/MosqueHeader';
 import { MosqueInfo } from './MosqueInfo/MosqueInfo';
@@ -38,6 +39,7 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isFavourite, setIsFavourite] = useState(false);
   const [showAddTimings, setShowAddTimings] = useState(false);
+  const [showReportMistake, setShowReportMistake] = useState(false);
 
   useEffect(() => {
     if (mosque) {
@@ -165,6 +167,7 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
               <ActionBar
                 onGetDirections={handleGetDirections}
                 onEditTimings={() => setShowAddTimings(true)}
+                onReportMistake={() => setShowReportMistake(true)}
               />
 
               <View style={styles.divider} />
@@ -195,6 +198,14 @@ export const MosqueBottomSheet = ({ mosque, onClose }: Props) => {
           mosqueName={mosque.title}
           onClose={() => setShowAddTimings(false)}
           onSubmit={handleSubmitTimings}
+        />
+      )}
+
+      {mosque && (
+        <ReportMistakeModal
+          visible={showReportMistake}
+          mosque={mosque}
+          onClose={() => setShowReportMistake(false)}
         />
       )}
     </>

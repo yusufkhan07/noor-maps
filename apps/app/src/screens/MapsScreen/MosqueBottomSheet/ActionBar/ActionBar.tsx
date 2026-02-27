@@ -5,9 +5,10 @@ import { styles } from './styles';
 type Props = {
   onGetDirections: () => void;
   onEditTimings: () => void;
+  onReportMistake: () => void;
 };
 
-export const ActionBar = ({ onGetDirections, onEditTimings }: Props) => (
+export const ActionBar = ({ onGetDirections, onEditTimings, onReportMistake }: Props) => (
   <ScrollView
     horizontal
     showsHorizontalScrollIndicator={false}
@@ -23,7 +24,7 @@ export const ActionBar = ({ onGetDirections, onEditTimings }: Props) => (
       <Text style={styles.actionChipLabel}>Edit Timings</Text>
     </TouchableOpacity>
 
-    <TouchableOpacity style={[styles.actionChip, styles.actionChipLast]} onPress={() => {}}>
+    <TouchableOpacity style={[styles.actionChip, styles.actionChipLast]} onPress={onReportMistake}>
       <Text style={styles.actionChipIcon}>⚑</Text>
       <Text style={styles.actionChipLabel}>Report a Mistake</Text>
     </TouchableOpacity>

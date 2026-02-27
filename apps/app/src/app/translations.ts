@@ -35,6 +35,22 @@ export const t = {
     confirmCancel: 'Go Back',
   },
 
+  // ── ReportMistakeModal ───────────────────────────────────
+  reportMistake: {
+    title: 'Report a Mistake',
+    cancel: 'Cancel',
+    submit: 'Submit',
+    addressLabel: 'Address',
+    emailLabel: 'Email',
+    websiteLabel: 'Website',
+    phoneLabel: 'Phone',
+    addressPlaceholder: 'Enter address',
+    emailPlaceholder: 'Enter email',
+    websitePlaceholder: 'Enter website',
+    phonePlaceholder: 'Enter phone number',
+    submitError: 'Failed to submit. Please try again.',
+  },
+
   // ── Login ────────────────────────────────────────────────
   login: {
     title: 'Welcome to Noor Maps',

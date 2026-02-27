@@ -68,6 +68,19 @@ export async function createMosque(mosque: NewMosque): Promise<Mosque> {
   return res.json();
 }
 
+export async function patchMosque(
+  mosqueId: string,
+  patch: { address?: string; email?: string; website?: string; phone?: string },
+): Promise<Mosque> {
+  const res = await fetch(`${API_BASE}/mosques/${mosqueId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`Failed to update mosque: ${res.status}`);
+  return res.json();
+}
+
 export async function patchMosqueTimings(
   mosqueId: string,
   fixed: Record<string, string>,

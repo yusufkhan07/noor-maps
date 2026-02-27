@@ -64,6 +64,15 @@ export class MosqueRepository {
     return (data as MosqueRow[]).map(rowToMosque);
   }
 
+  async update(id: string, patch: { address?: string; phone?: string; email?: string; website?: string }): Promise<Mosque | undefined> {
+    const { error } = await supabase
+      .from('mosques')
+      .update(patch)
+      .eq('id', id);
+    if (error) throw error;
+    return this.findById(id);
+  }
+
   async create(input: CreateMosqueInput): Promise<Mosque> {
     const { coordinate, ...rest } = input;
     const { data, error } = await supabase
