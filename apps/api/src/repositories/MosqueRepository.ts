@@ -12,6 +12,15 @@ type MosqueRow = {
   website: string | null;
 };
 
+export type CreateMosqueInput = {
+  title: string;
+  address: string;
+  coordinate: { latitude: number; longitude: number };
+  phone?: string;
+  email?: string;
+  website?: string;
+};
+
 function rowToMosque(row: MosqueRow): Mosque {
   return {
     id: row.id,
@@ -47,5 +56,25 @@ export class MosqueRepository {
     });
     if (error) throw error;
     return (data as MosqueRow[]).map(rowToMosque);
+  }
+
+  async create(input: CreateMosqueInput): Promise<Mosque> {
+    const { coordinate, ...rest } = input;
+    const { data, error } = await supabase
+      .from('mosques')
+      .insert({
+        id: crypto.randomUUID(),
+        title: rest.title,
+        address: rest.address,
+        location: `POINT(${coordinate.longitude} ${coordinate.latitude})`,
+        phone: rest.phone ?? null,
+        email: rest.email ?? null,
+        website: rest.website ?? null,
+      })
+      .select('id, title, address, phone, email, website')
+      .single();
+    if (error) throw error;
+    const row = data as Omit<MosqueRow, 'latitude' | 'longitude'>;
+    return rowToMosque({ ...row, latitude: coordinate.latitude, longitude: coordinate.longitude });
   }
 }

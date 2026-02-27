@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
-import MapView, { Circle, Marker } from 'react-native-maps';
+import { Animated, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import MapView, { Circle, MapPressEvent, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MosqueBottomSheet } from './MosqueBottomSheet/MosqueBottomSheet';
+import { AddMosqueModal } from './AddMosqueModal/AddMosqueModal';
 import { SearchBar } from './SearchBar/SearchBar';
 import { useMosques } from './queries/useMosques';
 import { styles } from './styles';
@@ -18,9 +21,14 @@ const INITIAL_REGION = {
 };
 
 export const MapsScreen = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
   const [searchPin, setSearchPin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinnedLocation, setPinnedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showAddMosque, setShowAddMosque] = useState(false);
   const mapRef = useRef<MapView>(null);
+  const tabBarOpacity = useRef(new Animated.Value(1)).current;
 
   const handleSelectResult = (latitude: number, longitude: number) => {
     setSearchPin({ latitude, longitude });
@@ -30,7 +38,27 @@ export const MapsScreen = () => {
     );
   };
 
+  const handleMapPress = (event: MapPressEvent) => {
+    setPinnedLocation(event.nativeEvent.coordinate);
+  };
+
+  const handleAddMosqueClose = () => {
+    setShowAddMosque(false);
+    setPinnedLocation(null);
+  };
+
   const mosques = useMosques();
+
+  useEffect(() => {
+    Animated.timing(tabBarOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    navigation.setOptions({
+      tabBarStyle: { opacity: tabBarOpacity },
+    });
+  }, [navigation, tabBarOpacity]);
 
   useEffect(() => {
     (async () => {
@@ -53,7 +81,7 @@ export const MapsScreen = () => {
 
   return (
     <View style={styles.container}>
-      {!selectedMosque && (
+      {!selectedMosque && !pinnedLocation && (
         <SearchBar onSelectResult={handleSelectResult} onClear={() => setSearchPin(null)} />
       )}
       <MapView
@@ -62,15 +90,22 @@ export const MapsScreen = () => {
         initialRegion={INITIAL_REGION}
         showsUserLocation={true}
         showsMyLocationButton={false}
+        onPress={handleMapPress}
       >
         {searchPin && (
           <Marker coordinate={searchPin} pinColor="red" />
+        )}
+        {pinnedLocation && (
+          <Marker coordinate={pinnedLocation} pinColor="green" />
         )}
         {mosques.map((mosque) => (
           <React.Fragment key={mosque.id}>
             <Marker
               coordinate={mosque.coordinate}
-              onPress={() => {
+              tracksViewChanges={false}
+              onPress={(e) => {
+                e.stopPropagation();
+                setPinnedLocation(null);
                 setSelectedMosque(mosque);
               }}
             >
@@ -86,12 +121,38 @@ export const MapsScreen = () => {
         ))}
       </MapView>
 
+      <Modal
+        visible={!!pinnedLocation && !showAddMosque}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPinnedLocation(null)}
+      >
+        <View style={styles.overlay} pointerEvents="box-none">
+          <View style={[styles.locationPopup, { marginBottom: insets.bottom + 24 }]}>
+            <Text style={styles.locationPopupTitle}>What would you like to add here?</Text>
+            <TouchableOpacity style={styles.locationPopupBtn} onPress={() => setShowAddMosque(true)}>
+              <Text style={styles.locationPopupBtnText}>🕌  Add a Mosque</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setPinnedLocation(null)}>
+              <Text style={styles.locationPopupCancel}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <MosqueBottomSheet
         mosque={selectedMosque}
-        onClose={() => {
-          setSelectedMosque(null);
-        }}
+        onClose={() => setSelectedMosque(null)}
       />
+
+      {pinnedLocation && showAddMosque && (
+        <AddMosqueModal
+          visible={true}
+          coordinate={pinnedLocation}
+          onClose={handleAddMosqueClose}
+          onSuccess={handleAddMosqueClose}
+        />
+      )}
     </View>
   );
 };

@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import type { Mosque } from '../screens/MosqueBottomSheet/MosqueBottomSheet';
+import type { Mosque } from '../screens/MapsScreen/MosqueBottomSheet/types';
 
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
 export const API_BASE = `http://${devHost}:3000`;
@@ -36,6 +36,25 @@ export async function fetchAladhanTimings(lat: number, lng: number): Promise<Ala
 export async function fetchMosqueTimings(mosqueId: string): Promise<MosqueTimings | null> {
   const res = await fetch(`${API_BASE}/mosques/${mosqueId}/timings`);
   if (!res.ok) return null;
+  return res.json();
+}
+
+export type NewMosque = {
+  title: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  coordinate: { latitude: number; longitude: number };
+};
+
+export async function createMosque(mosque: NewMosque): Promise<Mosque> {
+  const res = await fetch(`${API_BASE}/mosques`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(mosque),
+  });
+  if (!res.ok) throw new Error(`Failed to create mosque: ${res.status}`);
   return res.json();
 }
 
