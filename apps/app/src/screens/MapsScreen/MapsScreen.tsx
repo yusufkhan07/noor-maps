@@ -14,8 +14,8 @@ import { Mosque } from './MosqueBottomSheet/types';
 const RADIUS_METERS = 1000;
 
 const INITIAL_REGION = {
-  latitude: 51.5072,
-  longitude: -0.1276,
+  latitude: 45.4955,
+  longitude: -73.8472,
   latitudeDelta: 0.08,
   longitudeDelta: 0.08,
 };
@@ -88,6 +88,7 @@ const [pinnedLocation, setPinnedLocation] = useState<{ latitude: number; longitu
         showsUserLocation={true}
         showsMyLocationButton={false}
         onPress={handleMapPress}
+        userInterfaceStyle="light"
       >
 {pinnedLocation && (
           <Marker coordinate={pinnedLocation} pinColor="green" />
