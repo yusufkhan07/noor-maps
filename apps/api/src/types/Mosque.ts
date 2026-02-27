@@ -6,6 +6,8 @@ export type Mosque = {
   phone?: string;
   email?: string;
   website?: string;
+  method?: number;
+  school?: 0 | 1;
 };
 
 export type IqamaFixed = {

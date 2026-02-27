@@ -10,6 +10,8 @@ type MosqueRow = {
   phone: string | null;
   email: string | null;
   website: string | null;
+  method: number | null;
+  school: number | null;
 };
 
 export type CreateMosqueInput = {
@@ -19,6 +21,8 @@ export type CreateMosqueInput = {
   phone?: string;
   email?: string;
   website?: string;
+  method?: number;
+  school?: 0 | 1;
 };
 
 function rowToMosque(row: MosqueRow): Mosque {
@@ -30,6 +34,8 @@ function rowToMosque(row: MosqueRow): Mosque {
     phone: row.phone ?? undefined,
     email: row.email ?? undefined,
     website: row.website ?? undefined,
+    method: row.method ?? undefined,
+    school: (row.school as 0 | 1 | null) ?? undefined,
   };
 }
 
@@ -70,11 +76,13 @@ export class MosqueRepository {
         phone: rest.phone ?? null,
         email: rest.email ?? null,
         website: rest.website ?? null,
+        method: rest.method ?? null,
+        school: rest.school ?? null,
       })
-      .select('id, title, address, phone, email, website')
+      .select('id, title, address, phone, email, website, method, school')
       .single();
     if (error) throw error;
     const row = data as Omit<MosqueRow, 'latitude' | 'longitude'>;
-    return rowToMosque({ ...row, latitude: coordinate.latitude, longitude: coordinate.longitude });
+    return rowToMosque({ ...row, latitude: coordinate.latitude, longitude: coordinate.longitude, method: row.method ?? null, school: row.school ?? null });
   }
 }

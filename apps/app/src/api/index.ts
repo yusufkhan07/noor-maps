@@ -25,10 +25,14 @@ export async function fetchMosques(): Promise<Mosque[]> {
 export async function fetchAladhanTimings(
   lat: number,
   lng: number,
+  method?: number,
+  school?: 0 | 1,
 ): Promise<AladhanTimings> {
   const timestamp = Math.floor(Date.now() / 1000);
+  const methodParam = method !== undefined ? `&method=${method}` : '';
+  const schoolParam = school !== undefined ? `&school=${school}` : '';
   const res = await fetch(
-    `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${lat}&longitude=${lng}`,
+    `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${lat}&longitude=${lng}${methodParam}${schoolParam}`,
   );
   if (!res.ok) throw new Error(`Aladhan API error: ${res.status}`);
   const json = await res.json();
@@ -50,6 +54,7 @@ export type NewMosque = {
   phone?: string;
   email?: string;
   website?: string;
+  method?: number;
   coordinate: { latitude: number; longitude: number };
 };
 

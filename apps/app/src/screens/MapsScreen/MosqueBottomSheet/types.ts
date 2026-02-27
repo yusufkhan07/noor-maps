@@ -7,6 +7,8 @@ export type Mosque = {
   email?: string;
   website?: string;
   phone?: string;
+  method?: number;
+  school?: 0 | 1;
 };
 
 export type PrayerTimes = {

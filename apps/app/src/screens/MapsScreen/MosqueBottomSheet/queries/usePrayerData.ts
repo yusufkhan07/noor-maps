@@ -40,7 +40,7 @@ export function usePrayerData(mosque: Mosque | null): {
     queryFn: async (): Promise<PrayerData> => {
       const { latitude, longitude } = mosque!.coordinate;
       const [adhan, timings] = await Promise.all([
-        fetchAladhanTimings(latitude, longitude),
+        fetchAladhanTimings(latitude, longitude, mosque!.method, mosque!.school),
         fetchMosqueTimings(mosque!.id),
       ]);
 
