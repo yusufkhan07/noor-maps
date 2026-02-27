@@ -73,4 +73,18 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 4,
   },
+  radiusLabel: {
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 112, 200, 0.4)',
+  },
+  radiusLabelText: {
+    fontSize: 10,
+    color: 'rgba(0, 90, 180, 0.9)',
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
 });

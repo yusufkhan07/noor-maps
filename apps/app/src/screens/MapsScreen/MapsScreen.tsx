@@ -24,14 +24,11 @@ export const MapsScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
-  const [searchPin, setSearchPin] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [pinnedLocation, setPinnedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+const [pinnedLocation, setPinnedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [showAddMosque, setShowAddMosque] = useState(false);
   const mapRef = useRef<MapView>(null);
   const tabBarOpacity = useRef(new Animated.Value(1)).current;
-
   const handleSelectResult = (latitude: number, longitude: number) => {
-    setSearchPin({ latitude, longitude });
     mapRef.current?.animateToRegion(
       { latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 },
       1000,
@@ -82,7 +79,7 @@ export const MapsScreen = () => {
   return (
     <View style={styles.container}>
       {!selectedMosque && !pinnedLocation && (
-        <SearchBar onSelectResult={handleSelectResult} onClear={() => setSearchPin(null)} />
+        <SearchBar onSelectResult={handleSelectResult} onClear={() => {}} />
       )}
       <MapView
         ref={mapRef}
@@ -92,10 +89,7 @@ export const MapsScreen = () => {
         showsMyLocationButton={false}
         onPress={handleMapPress}
       >
-        {searchPin && (
-          <Marker coordinate={searchPin} pinColor="red" />
-        )}
-        {pinnedLocation && (
+{pinnedLocation && (
           <Marker coordinate={pinnedLocation} pinColor="green" />
         )}
         {mosques.map((mosque) => (
@@ -114,9 +108,23 @@ export const MapsScreen = () => {
             <Circle
               center={mosque.coordinate}
               radius={RADIUS_METERS}
-              strokeColor="rgba(0, 120, 200, 0.5)"
-              fillColor="rgba(0, 120, 200, 0.1)"
+              strokeColor="rgba(0, 112, 200, 0.6)"
+              strokeWidth={1.5}
+              fillColor="rgba(0, 112, 200, 0.07)"
             />
+            <Marker
+              coordinate={{
+                latitude: mosque.coordinate.latitude + 0.009,
+                longitude: mosque.coordinate.longitude,
+              }}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
+              tappable={false}
+            >
+              <View style={styles.radiusLabel}>
+                <Text style={styles.radiusLabelText}>1 km</Text>
+              </View>
+            </Marker>
           </React.Fragment>
         ))}
       </MapView>

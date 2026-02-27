@@ -10,6 +10,14 @@
 
 ## UI & Polish
 
+### [FEATURE] Show a marker at the searched location when a search result is selected
+- When the user selects a result from the `SearchBar` dropdown, drop a pin on the map at that location.
+- The pin should appear immediately when the map animates to the result.
+- Tapping anywhere else on the map should dismiss the pin.
+
+---
+
+
 ### [FEATURE] Show user's current location on the map
 - Display a "blue dot" (or equivalent) on the `MapsScreen` map indicating the user's current location.
 - Use the location permission already requested by `expo-location` — no additional permission flow needed.
